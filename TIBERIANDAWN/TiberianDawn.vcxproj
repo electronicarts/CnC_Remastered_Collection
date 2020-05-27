@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1380ED08-82A3-49C2-A171-1915574B3382}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TiberianDawn</RootNamespace>
+    <SccProjectName>SAK</SccProjectName>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccProvider>SAK</SccProvider>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\bin\$(PlatformName)\</OutDir>
+    <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)I</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\bin\$(PlatformName)\</OutDir>
+    <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>TRUE_FALSE_DEFINED;WIN32;_DEBUG;_WINDOWS;_USRDLL;TIBERIANDAWN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>./win32lib</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DisableSpecificWarnings>4800;4244;4996</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StructMemberAlignment>1Byte</StructMemberAlignment>
+      <SupportJustMyCode>false</SupportJustMyCode>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>winmm.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+      <FixedBaseAddress>false</FixedBaseAddress>
+      <BaseAddress>
+      </BaseAddress>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+    </Link>
+    <PreLinkEvent>
+      <Command>
+      </Command>
+    </PreLinkEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>TRUE_FALSE_DEFINED;WIN32;NDEBUG;_WINDOWS;_USRDLL;TIBERIANDAWN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>./win32lib</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4800;4244;4996</DisableSpecificWarnings>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <StructMemberAlignment>1Byte</StructMemberAlignment>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>winmm.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers />
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>false</DataExecutionPrevention>
+    </Link>
+    <PreLinkEvent>
+      <Command>
+      </Command>
+    </PreLinkEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <MASM Include="win32lib\TOBUFF.ASM" />
+    <MASM Include="win32lib\XORDELTA.ASM">
+      <EnableMASM51Compatibility Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</EnableMASM51Compatibility>
+      <PreserveIdentifierCase Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</PreserveIdentifierCase>
+      <EnableMASM51Compatibility Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</EnableMASM51Compatibility>
+      <PreserveIdentifierCase Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</PreserveIdentifierCase>
+    </MASM>
+    <None Include="COORDA.ASM" />
+    <MASM Include="KEYFBUFF.ASM">
+      <FileType>Document</FileType>
+      <EnableMASM51Compatibility Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</EnableMASM51Compatibility>
+      <PreserveIdentifierCase Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</PreserveIdentifierCase>
+      <PreserveIdentifierCase Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</PreserveIdentifierCase>
+      <EnableMASM51Compatibility Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</EnableMASM51Compatibility>
+    </MASM>
+    <None Include="KEYFBUFF.INC" />
+    <MASM Include="MMX.ASM">
+      <FileType>Document</FileType>
+    </MASM>
+    <None Include="PAGFAULT.ASM" />
+    <None Include="SUPPORT.ASM" />
+    <MASM Include="TXTPRNT.ASM">
+      <FileType>Document</FileType>
+      <PreserveIdentifierCase Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">1</PreserveIdentifierCase>
+      <PreserveIdentifierCase Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">1</PreserveIdentifierCase>
+      <EnableMASM51Compatibility Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</EnableMASM51Compatibility>
+      <EnableMASM51Compatibility Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</EnableMASM51Compatibility>
+    </MASM>
+    <None Include="win32lib\DIFFTB.INC" />
+    <None Include="win32lib\DRAWBUFF.INC" />
+    <MASM Include="win32lib\FACINGFF.ASM">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </MASM>
+    <None Include="win32lib\GBUFFER.INC" />
+    <None Include="win32lib\HOLD.TXT" />
+    <None Include="win32lib\INDEXTB.INC" />
+    <None Include="win32lib\KEYBOARD.INC" />
+    <None Include="win32lib\KEYSTRUC.INC" />
+    <None Include="win32lib\MCGAPRIM.INC" />
+    <None Include="win32lib\MOUSE.INC" />
+    <None Include="win32lib\NYBBTB.INC" />
+    <None Include="win32lib\PROFILE.INC" />
+    <None Include="win32lib\REMAP.ASM" />
+    <None Include="win32lib\SHAPE.INC" />
+    <None Include="win32lib\STAMP.INC" />
+    <None Include="win32lib\SVGAPRIM.INC" />
+    <None Include="win32lib\WWMEM.INC" />
+    <None Include="WINASM.ASM" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ABSTRACT.H" />
+    <ClInclude Include="AIRCRAFT.H" />
+    <ClInclude Include="ANIM.H" />
+    <ClInclude Include="AUDIO.H" />
+    <ClInclude Include="BASE.H" />
+    <ClInclude Include="BUILDING.H" />
+    <ClInclude Include="BULLET.H" />
+    <ClInclude Include="CARGO.H" />
+    <ClInclude Include="CCDDE.H" />
+    <ClInclude Include="CCFILE.H" />
+    <ClInclude Include="CDFILE.H" />
+    <ClInclude Include="CELL.H" />
+    <ClInclude Include="CHECKBOX.H" />
+    <ClInclude Include="CHEKLIST.H" />
+    <ClInclude Include="COLRLIST.H" />
+    <ClInclude Include="COMBUF.H" />
+    <ClInclude Include="COMPAT.H" />
+    <ClInclude Include="COMQUEUE.H" />
+    <ClInclude Include="CONFDLG.H" />
+    <ClInclude Include="CONNECT.H" />
+    <ClInclude Include="CONNMGR.H" />
+    <ClInclude Include="CONQUER.H" />
+    <ClInclude Include="CONTROL.H" />
+    <ClInclude Include="CREDITS.H" />
+    <ClInclude Include="CREW.H" />
+    <ClInclude Include="DDE.H" />
+    <ClInclude Include="DEBUG.H" />
+    <ClInclude Include="DEFINES.H" />
+    <ClInclude Include="DESCDLG.H" />
+    <ClInclude Include="DIAL8.H" />
+    <ClInclude Include="DISPLAY.H" />
+    <ClInclude Include="DLLInterface.h" />
+    <ClInclude Include="DOOR.H" />
+    <ClInclude Include="DPMI.H" />
+    <ClInclude Include="DRIVE.H" />
+    <ClInclude Include="EDIT.H" />
+    <ClInclude Include="ENDING.H" />
+    <ClInclude Include="EVENT.H" />
+    <ClInclude Include="EXTERNS.H" />
+    <ClInclude Include="FACING.H" />
+    <ClInclude Include="FACTORY.H" />
+    <ClInclude Include="FIELD.H" />
+    <ClInclude Include="FLASHER.H" />
+    <ClInclude Include="FLY.H" />
+    <ClInclude Include="FOOT.H" />
+    <ClInclude Include="FTIMER.H" />
+    <ClInclude Include="FUNCTION.H" />
+    <ClInclude Include="FUSE.H" />
+    <ClInclude Include="GADGET.H" />
+    <ClInclude Include="GAMEDLG.H" />
+    <ClInclude Include="GAUGE.H" />
+    <ClInclude Include="GOPTIONS.H" />
+    <ClInclude Include="GSCREEN.H" />
+    <ClInclude Include="HEAP.H" />
+    <ClInclude Include="HELP.H" />
+    <ClInclude Include="HOUSE.H" />
+    <ClInclude Include="INFANTRY.H" />
+    <ClInclude Include="INTRO.H" />
+    <ClInclude Include="IPX.H" />
+    <ClInclude Include="IPX95.H" />
+    <ClInclude Include="IPXADDR.H" />
+    <ClInclude Include="IPXCONN.H" />
+    <ClInclude Include="IPXGCONN.H" />
+    <ClInclude Include="IPXMGR.H" />
+    <ClInclude Include="JSHELL.H" />
+    <ClInclude Include="LAYER.H" />
+    <ClInclude Include="LED.H" />
+    <ClInclude Include="LINK.H" />
+    <ClInclude Include="LIST.H" />
+    <ClInclude Include="LOADDLG.H" />
+    <ClInclude Include="LOGIC.H" />
+    <ClInclude Include="MAP.H" />
+    <ClInclude Include="MAPEDIT.H" />
+    <ClInclude Include="MEMCHECK.H" />
+    <ClInclude Include="MESSAGE.H" />
+    <ClInclude Include="MISSION.H" />
+    <ClInclude Include="MIXFILE.H" />
+    <ClInclude Include="MONOC.H" />
+    <ClInclude Include="MOUSE.H" />
+    <ClInclude Include="MSGBOX.H" />
+    <ClInclude Include="MSGLIST.H" />
+    <ClInclude Include="NOSEQCON.H" />
+    <ClInclude Include="NULLCONN.H" />
+    <ClInclude Include="NULLMGR.H" />
+    <ClInclude Include="OBJECT.H" />
+    <ClInclude Include="OPTIONS.H" />
+    <ClInclude Include="OVERLAY.H" />
+    <ClInclude Include="PACKET.H" />
+    <ClInclude Include="PHONE.H" />
+    <ClInclude Include="POWER.H" />
+    <ClInclude Include="QUEUE.H" />
+    <ClInclude Include="RADAR.H" />
+    <ClInclude Include="RADIO.H" />
+    <ClInclude Include="RAWFILE.H" />
+    <ClInclude Include="REAL.H" />
+    <ClInclude Include="REGION.H" />
+    <ClInclude Include="Resource\resource.h" />
+    <ClInclude Include="RULES.H" />
+    <ClInclude Include="SAVEDLG.H" />
+    <ClInclude Include="SCORE.H" />
+    <ClInclude Include="SCREEN.H" />
+    <ClInclude Include="SCROLL.H" />
+    <ClInclude Include="SEQCONN.H" />
+    <ClInclude Include="SESSION.H" />
+    <ClInclude Include="SHAPEBTN.H" />
+    <ClInclude Include="SIDEBAR.H" />
+    <ClInclude Include="SIDEBARGlyphx.H" />
+    <ClInclude Include="SLIDER.H" />
+    <ClInclude Include="SMUDGE.H" />
+    <ClInclude Include="SOUNDDLG.H" />
+    <ClInclude Include="SPECIAL.H" />
+    <ClInclude Include="STAGE.H" />
+    <ClInclude Include="SUPER.H" />
+    <ClInclude Include="TAB.H" />
+    <ClInclude Include="TARCOM.H" />
+    <ClInclude Include="TARGET.H" />
+    <ClInclude Include="TCPIP.H" />
+    <ClInclude Include="TEAM.H" />
+    <ClInclude Include="TEAMTYPE.H" />
+    <ClInclude Include="TECHNO.H" />
+    <ClInclude Include="TEMPLATE.H" />
+    <ClInclude Include="TERRAIN.H" />
+    <ClInclude Include="TEXTBLIT.H" />
+    <ClInclude Include="TEXTBTN.H" />
+    <ClInclude Include="THEME.H" />
+    <ClInclude Include="TOGGLE.H" />
+    <ClInclude Include="TRIGGER.H" />
+    <ClInclude Include="TURRET.H" />
+    <ClInclude Include="TXTLABEL.H" />
+    <ClInclude Include="TYPE.H" />
+    <ClInclude Include="UNIT.H" />
+    <ClInclude Include="UTRACKER.H" />
+    <ClInclude Include="VECTOR.H" />
+    <ClInclude Include="VISUDLG.H" />
+    <ClInclude Include="WATCOM.H" />
+    <ClInclude Include="win32lib\AUDIO.H" />
+    <ClInclude Include="win32lib\BUFFER.H" />
+    <ClInclude Include="win32lib\DDRAW.H" />
+    <ClInclude Include="win32lib\DEFINES.H" />
+    <ClInclude Include="win32lib\DESCMGMT.H" />
+    <ClInclude Include="win32lib\DIPTHONG.H" />
+    <ClInclude Include="win32lib\DPLAY.H" />
+    <ClInclude Include="win32lib\DRAWBUFF.H" />
+    <ClInclude Include="win32lib\DSETUP.H" />
+    <ClInclude Include="win32lib\DSOUND.H" />
+    <ClInclude Include="win32lib\EXTERNS.H" />
+    <ClInclude Include="win32lib\FACINGFF.h" />
+    <ClInclude Include="win32lib\FASTFILE.H" />
+    <ClInclude Include="win32lib\FILE.H" />
+    <ClInclude Include="win32lib\FILEPCX.H" />
+    <ClInclude Include="win32lib\FILETEMP.H" />
+    <ClInclude Include="win32lib\FONT.H" />
+    <ClInclude Include="win32lib\FUNCTION.H" />
+    <ClInclude Include="win32lib\GBUFFER.H" />
+    <ClInclude Include="win32lib\ICONCACH.H" />
+    <ClInclude Include="win32lib\IFF.H" />
+    <ClInclude Include="win32lib\KEYBOARD.H" />
+    <ClInclude Include="win32lib\MEMFLAG.H" />
+    <ClInclude Include="win32lib\MISC.H" />
+    <ClInclude Include="win32lib\MODEMREG.H" />
+    <ClInclude Include="win32lib\MONO.H" />
+    <ClInclude Include="win32lib\MOUSE.H" />
+    <ClInclude Include="win32lib\PALETTE.H" />
+    <ClInclude Include="win32lib\PLAYCD.H" />
+    <ClInclude Include="win32lib\PROFILE.H" />
+    <ClInclude Include="win32lib\RAWFILE.H" />
+    <ClInclude Include="win32lib\SHAPE.H" />
+    <ClInclude Include="win32lib\SOUND.H" />
+    <ClInclude Include="win32lib\SOUNDINT.H" />
+    <ClInclude Include="win32lib\STRUCTS.H" />
+    <ClInclude Include="win32lib\TILE.H" />
+    <ClInclude Include="win32lib\TIMER.H" />
+    <ClInclude Include="win32lib\VIDEO.H" />
+    <ClInclude Include="win32lib\WINCOMM.H" />
+    <ClInclude Include="win32lib\WSA.H" />
+    <ClInclude Include="win32lib\WWFILE.H" />
+    <ClInclude Include="win32lib\WWLIB32.H" />
+    <ClInclude Include="win32lib\WWMEM.H" />
+    <ClInclude Include="win32lib\WWSTD.H" />
+    <ClInclude Include="win32lib\WW_WIN.H" />
+    <ClInclude Include="win32lib\_FILE.H" />
+    <ClInclude Include="WWALLOC.H" />
+    <ClInclude Include="WWFILE.H" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AADATA.CPP" />
+    <ClCompile Include="ABSTRACT.CPP" />
+    <ClCompile Include="ADATA.CPP" />
+    <ClCompile Include="AIRCRAFT.CPP" />
+    <ClCompile Include="ALLOC.CPP">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="ANIM.CPP" />
+    <ClCompile Include="AUDIO.CPP" />
+    <ClCompile Include="BASE.CPP" />
+    <ClCompile Include="BBDATA.CPP" />
+    <ClCompile Include="BDATA.CPP" />
+    <ClCompile Include="BUILDING.CPP" />
+    <ClCompile Include="BULLET.CPP" />
+    <ClCompile Include="CARGO.CPP" />
+    <ClCompile Include="CCDDE.CPP" />
+    <ClCompile Include="CCFILE.CPP" />
+    <ClCompile Include="CDATA.CPP" />
+    <ClCompile Include="CDFILE.CPP" />
+    <ClCompile Include="CELL.CPP" />
+    <ClCompile Include="CHECKBOX.CPP" />
+    <ClCompile Include="CHEKLIST.CPP" />
+    <ClCompile Include="COLRLIST.CPP" />
+    <ClCompile Include="COMBAT.CPP" />
+    <ClCompile Include="COMBUF.CPP" />
+    <ClCompile Include="COMQUEUE.CPP" />
+    <ClCompile Include="CONFDLG.CPP" />
+    <ClCompile Include="CONNECT.CPP" />
+    <ClCompile Include="CONQUER.CPP" />
+    <ClCompile Include="CONST.CPP" />
+    <ClCompile Include="CONTROL.CPP" />
+    <ClCompile Include="COORD.CPP" />
+    <ClCompile Include="CREDITS.CPP" />
+    <ClCompile Include="CREW.CPP" />
+    <ClCompile Include="DDE.CPP" />
+    <ClCompile Include="DEBUG.CPP" />
+    <ClCompile Include="DESCDLG.CPP" />
+    <ClCompile Include="DIAL8.CPP" />
+    <ClCompile Include="DIALOG.CPP" />
+    <ClCompile Include="DISPLAY.CPP" />
+    <ClCompile Include="DLLInterface.cpp" />
+    <ClCompile Include="DLLInterfaceEditor.cpp" />
+    <ClCompile Include="DOOR.CPP" />
+    <ClCompile Include="DPMI.CPP" />
+    <ClCompile Include="DRIVE.CPP" />
+    <ClCompile Include="EDIT.CPP" />
+    <ClCompile Include="ENDING.CPP" />
+    <ClCompile Include="EVENT.CPP" />
+    <ClCompile Include="EXPAND.CPP" />
+    <ClCompile Include="FACING.CPP" />
+    <ClCompile Include="FACTORY.CPP" />
+    <ClCompile Include="FIELD.CPP" />
+    <ClCompile Include="FINDPATH.CPP" />
+    <ClCompile Include="FLASHER.CPP" />
+    <ClCompile Include="FLY.CPP" />
+    <ClCompile Include="FOOT.CPP" />
+    <ClCompile Include="FUSE.CPP" />
+    <ClCompile Include="GADGET.CPP" />
+    <ClCompile Include="GAMEDLG.CPP" />
+    <ClCompile Include="GAUGE.CPP" />
+    <ClCompile Include="GLOBALS.CPP" />
+    <ClCompile Include="GOPTIONS.CPP" />
+    <ClCompile Include="GSCREEN.CPP" />
+    <ClCompile Include="HDATA.CPP" />
+    <ClCompile Include="HEAP.CPP" />
+    <ClCompile Include="HELP.CPP" />
+    <ClCompile Include="HOUSE.CPP" />
+    <ClCompile Include="IDATA.CPP" />
+    <ClCompile Include="INFANTRY.CPP" />
+    <ClCompile Include="INI.CPP" />
+    <ClCompile Include="INIT.CPP" />
+    <ClCompile Include="INTERNET.CPP" />
+    <ClCompile Include="INTERPAL.CPP" />
+    <ClCompile Include="INTRO.CPP" />
+    <ClCompile Include="IOMAP.CPP" />
+    <ClCompile Include="IOOBJ.CPP" />
+    <ClCompile Include="IPX.CPP" />
+    <ClCompile Include="IPX95.CPP" />
+    <ClCompile Include="IPXADDR.CPP" />
+    <ClCompile Include="IPXCONN.CPP" />
+    <ClCompile Include="IPXGCONN.CPP" />
+    <ClCompile Include="IPXMGR.CPP" />
+    <ClCompile Include="JSHELL.CPP" />
+    <ClCompile Include="KEYFRAME.CPP" />
+    <ClCompile Include="LAYER.CPP" />
+    <ClCompile Include="LINK.CPP" />
+    <ClCompile Include="LIST.CPP" />
+    <ClCompile Include="LOADDLG.CPP" />
+    <ClCompile Include="LOGIC.CPP" />
+    <ClCompile Include="MAP.CPP" />
+    <ClCompile Include="MAPEDDLG.CPP" />
+    <ClCompile Include="MAPEDIT.CPP" />
+    <ClCompile Include="MAPEDPLC.CPP" />
+    <ClCompile Include="MAPEDSEL.CPP" />
+    <ClCompile Include="MAPEDTM.CPP" />
+    <ClCompile Include="MAPSEL.CPP" />
+    <ClCompile Include="MENUS.CPP" />
+    <ClCompile Include="MiscAsm.cpp" />
+    <ClCompile Include="MISSION.CPP" />
+    <ClCompile Include="MIXFILE.CPP" />
+    <ClCompile Include="MONOC.CPP" />
+    <ClCompile Include="MOUSE.CPP" />
+    <ClCompile Include="MPLAYER.CPP" />
+    <ClCompile Include="MSGBOX.CPP" />
+    <ClCompile Include="MSGLIST.CPP" />
+    <ClCompile Include="NETDLG.CPP" />
+    <ClCompile Include="NOSEQCON.CPP" />
+    <ClCompile Include="NULLCONN.CPP" />
+    <ClCompile Include="NULLDLG.CPP" />
+    <ClCompile Include="NULLMGR.CPP" />
+    <ClCompile Include="OBJECT.CPP" />
+    <ClCompile Include="ODATA.CPP" />
+    <ClCompile Include="OPTIONS.CPP" />
+    <ClCompile Include="OVERLAY.CPP" />
+    <ClCompile Include="PACKET.CPP" />
+    <ClCompile Include="POWER.CPP" />
+    <ClCompile Include="PROFILE.CPP" />
+    <ClCompile Include="QUEUE.CPP" />
+    <ClCompile Include="RADAR.CPP" />
+    <ClCompile Include="RADIO.CPP" />
+    <ClCompile Include="RAND.CPP" />
+    <ClCompile Include="RAWFILE.CPP" />
+    <ClCompile Include="REINF.CPP" />
+    <ClCompile Include="RULES.CPP" />
+    <ClCompile Include="SAVELOAD.CPP" />
+    <ClCompile Include="SCENARIO.CPP" />
+    <ClCompile Include="SCORE.CPP" />
+    <ClCompile Include="SCROLL.CPP" />
+    <ClCompile Include="SDATA.CPP" />
+    <ClCompile Include="SEQCONN.CPP" />
+    <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="SHAPEBTN.CPP" />
+    <ClCompile Include="SIDEBAR.CPP" />
+    <ClCompile Include="SIDEBARGlyphx.CPP" />
+    <ClCompile Include="SLIDER.CPP" />
+    <ClCompile Include="SMUDGE.CPP" />
+    <ClCompile Include="SOUNDDLG.CPP" />
+    <ClCompile Include="SPECIAL.CPP" />
+    <ClCompile Include="STARTUP.CPP" />
+    <ClCompile Include="STATS.CPP" />
+    <ClCompile Include="SUPER.CPP" />
+    <ClCompile Include="TAB.CPP" />
+    <ClCompile Include="TARCOM.CPP" />
+    <ClCompile Include="TARGET.CPP" />
+    <ClCompile Include="TCPIP.CPP" />
+    <ClCompile Include="TDATA.CPP" />
+    <ClCompile Include="TEAM.CPP" />
+    <ClCompile Include="TEAMTYPE.CPP" />
+    <ClCompile Include="TECHNO.CPP" />
+    <ClCompile Include="TEMPLATE.CPP" />
+    <ClCompile Include="TERRAIN.CPP" />
+    <ClCompile Include="TEXTBTN.CPP" />
+    <ClCompile Include="THEME.CPP" />
+    <ClCompile Include="TOGGLE.CPP" />
+    <ClCompile Include="TRIGGER.CPP" />
+    <ClCompile Include="TURRET.CPP" />
+    <ClCompile Include="TXTLABEL.CPP" />
+    <ClCompile Include="UDATA.CPP" />
+    <ClCompile Include="UNIT.CPP" />
+    <ClCompile Include="UTRACKER.CPP" />
+    <ClCompile Include="VECTOR.CPP" />
+    <ClCompile Include="VISUDLG.CPP" />
+    <ClCompile Include="win32lib\ALLOC.CPP" />
+    <ClCompile Include="win32lib\BUFFER.CPP" />
+    <ClCompile Include="win32lib\BUFFGLBL.CPP" />
+    <ClCompile Include="win32lib\DDRAW.CPP" />
+    <ClCompile Include="win32lib\DIPTHONG.CPP" />
+    <ClCompile Include="win32lib\DrawMisc.cpp" />
+    <ClCompile Include="win32lib\DRAWRECT.CPP" />
+    <ClCompile Include="win32lib\FONT.CPP" />
+    <ClCompile Include="win32lib\GBUFFER.CPP" />
+    <ClCompile Include="win32lib\GETSHAPE.CPP" />
+    <ClCompile Include="win32lib\ICONSET.CPP" />
+    <ClCompile Include="win32lib\IFF.CPP" />
+    <ClCompile Include="win32lib\IRANDOM.CPP" />
+    <ClCompile Include="win32lib\KEYBOARD.CPP" />
+    <ClCompile Include="win32lib\LOAD.CPP" />
+    <ClCompile Include="win32lib\LOADFONT.CPP" />
+    <ClCompile Include="win32lib\LOADPAL.CPP" />
+    <ClCompile Include="win32lib\MEM.CPP" />
+    <ClCompile Include="win32lib\MORPHPAL.CPP" />
+    <ClCompile Include="win32lib\MOUSEWW.CPP" />
+    <ClCompile Include="win32lib\NEWDEL.CPP" />
+    <ClCompile Include="win32lib\PALETTE.CPP" />
+    <ClCompile Include="win32lib\REGIONSZ.CPP" />
+    <ClCompile Include="win32lib\SET_FONT.CPP" />
+    <ClCompile Include="win32lib\TIMER.CPP" />
+    <ClCompile Include="win32lib\TIMERDWN.CPP" />
+    <ClCompile Include="win32lib\TIMERINI.CPP" />
+    <ClCompile Include="win32lib\WINDOWS.CPP" />
+    <ClCompile Include="win32lib\WINHIDE.CPP" />
+    <ClCompile Include="win32lib\WRITEPCX.CPP" />
+    <ClCompile Include="win32lib\WSA.CPP" />
+    <ClCompile Include="win32lib\_DIPTABL.CPP" />
+    <ClCompile Include="WINSTUB.CPP" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource\TiberianDawn.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+  </ImportGroup>
+</Project>
