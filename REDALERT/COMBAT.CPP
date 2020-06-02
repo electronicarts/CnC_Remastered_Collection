@@ -68,8 +68,6 @@
  *=============================================================================================*/
 int Modify_Damage(int damage, WarheadType warhead, ArmorType armor, int distance)
 {
-	if (!damage) return(damage);
-
 	/*
 	**	If there is no raw damage value to start with, then
 	**	there can be no modified damage either.
