@@ -1,0 +1,1 @@
+https://stackoverflow.com/questions/56570681/static-assertion-failed-with-windows-headers-require-the-default-packing-option
