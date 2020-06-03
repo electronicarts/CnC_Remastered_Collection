@@ -6,3 +6,5 @@
 /.vs
 /TIBERIANDAWN/Win32/Release
 /bin/Win32
+/TIBERIANDAWN/TiberianDawn.vcxproj.user
+/TIBERIANDAWN/Win32/Debug
