@@ -49,25 +49,25 @@
 
 
 #ifdef GERMAN
-#define TEXT_ERROR_TIMER                "Fehler - das Timer-System konnte aufgrund einer InstabilitÑt des Systems nicht initialisiert werden. Bitte starten Sie Windows neu."
+#define TEXT_ERROR_TIMER                "Fehler - das Timer-System konnte aufgrund einer Instabilit√§t des Systems nicht initialisiert werden. Bitte starten Sie Windows neu."
 #define TEXT_SHORT_TITLE                "C&C:AR"
 #define TEXT_MEMORY_ERROR               "Fehler - Kein Speicher mehr."
 #define TEXT_ABORT                      "Abbrechen"
-#define TEXT_DDRAW_ERROR                "Fehler - Kann primÑren Videopuffer nicht finden - Abbruch."
+#define TEXT_DDRAW_ERROR                "Fehler - Kann prim√§ren Videopuffer nicht finden - Abbruch."
 #define TEXT_TITLE                      "Command & Conquer : Alarmstufe Rot"
 #define TEXT_VIDEO_ERROR                "Fehler - Kann Grafikmodus nicht einstellen."
-#define TEXT_INSUFFICIENT               "Nicht genug Festplattenplatz fÅr Command & Conquer:AR.\n"
+#define TEXT_INSUFFICIENT               "Nicht genug Festplattenplatz f√ºr Command & Conquer:AR.\n"
 #define TEXT_MUST_HAVE                  "Sie brauchen %d MByte freien Platz auf der Festplatte."
-#define TEXT_CRITICALLY_LOW   			 "Nicht genug Festplattenplatz fÅr Command & Conquer:AR.\nSie brauchen %d MByte freien Platz auf der Festplatte."
-#define TEXT_NO_RAM                     "Zuwenig Hauptspeicher verfÅgbar.\n"
-#define TEXT_USE_START_MENU					"\n\rWenn auf Ihrem Rechner Windows 95 l‰uft,\n\rstarten Sie die DOS-Version von Alarmstufe Rot\n\rbitte ¸ber das Start-Men¸ von Windows 95.\n\rZum Weitermachen beliebige Taste dr¸cken.\n\r"
+#define TEXT_CRITICALLY_LOW   			 "Nicht genug Festplattenplatz f√ºr Command & Conquer:AR.\nSie brauchen %d MByte freien Platz auf der Festplatte."
+#define TEXT_NO_RAM                     "Zuwenig Hauptspeicher verf√ºgbar.\n"
+#define TEXT_USE_START_MENU					"\n\rWenn auf Ihrem Rechner Windows 95 l√µuft,\n\rstarten Sie die DOS-Version von Alarmstufe Rot\n\rbitte ¬≥ber das Start-Men¬≥ von Windows 95.\n\rZum Weitermachen beliebige Taste dr¬≥cken.\n\r"
 #define TEXT_SETUP_FIRST                "Bitte erst das SETUP-Programm starten.\n"
 #define TEXT_NO_MOUSE                   "C&C:AR kann Ihren Maustreiber nicht finden..."
 #define TEXT_FILE_ERROR       			 "DATEIFEHLER"
-#define TEXT_PRESS_KEY                  "Beliebige Taste drÅcken fÅr erneuten Versuch."
-#define TEXT_ESC_KEY                    "<ESC> drÅcken, um das Programm zu verlassen."
-#define TEXT_TO_EXIT                    "Beliebige Taste drÅcken, um das Programm zu verlassen."
-#define TEXT_INVALID                    "UngÅltiger Parameter.\n"
+#define TEXT_PRESS_KEY                  "Beliebige Taste dr√ºcken f√ºr erneuten Versuch."
+#define TEXT_ESC_KEY                    "<ESC> dr√ºcken, um das Programm zu verlassen."
+#define TEXT_TO_EXIT                    "Beliebige Taste dr√ºcken, um das Programm zu verlassen."
+#define TEXT_INVALID                    "Ung√ºltiger Parameter.\n"
 #define TEXT_MAP_ERROR                  "Kartenfehler!"
 #define TEXT_STOP                       "Halt"
 #define TEXT_CONTINUE                   "Weiter"
@@ -83,20 +83,20 @@
 
 
 #ifdef FRENCH
-#define TEXT_ERROR_TIMER                "Error - L'horloge systËme n'a pas pu s'initialiser en raison de l'instabilitÇ du sytËme. Vous devez redÇmarrer Windows."
+#define TEXT_ERROR_TIMER                "Error - L'horloge syst√ûme n'a pas pu s'initialiser en raison de l'instabilit√© du syt√ûme. Vous devez red√©marrer Windows."
 #define TEXT_SHORT_TITLE                "Alerte Rouge"
-#define TEXT_MEMORY_ERROR               "Erreur - Plus de mÇmoire."
+#define TEXT_MEMORY_ERROR               "Erreur - Plus de m√©moire."
 #define TEXT_ABORT                              "Interrompre"
-#define TEXT_DDRAW_ERROR                " Erreur - Impossible d'allouer le tampon vidÇo principal - Interruption."
+#define TEXT_DDRAW_ERROR                " Erreur - Impossible d'allouer le tampon vid√©o principal - Interruption."
 #define TEXT_TITLE                              "Command & Conquer : Alerte Rouge"
-#define TEXT_VIDEO_ERROR                " Erreur - Impossible d'Çtablir le mode vidÇo."
+#define TEXT_VIDEO_ERROR                " Erreur - Impossible d'√©tablir le mode vid√©o."
 #define TEXT_INSUFFICIENT               "Espace disque insuffisant pour lancer Command & Conquer.\n"
 #define TEXT_MUST_HAVE                  "Vous devez disposer de %d Mo d'espace disponsible sur le disque dur."
 #define TEXT_CRITICALLY_LOW     "Espace disque insuffisant pour lancer Command & Conquer.\nVous devez disposer de %d Mo d'espace disponsible sur le disque dur."
-#define TEXT_NO_RAM                             "MÇmoire vive (RAM) insuffisante.\n"
-#define TEXT_USE_START_MENU				 "\n\rSi vous àtes dans Windows 95 vous devez lancer Alerte Rouge\r\nDOS Ö partir du menu DÇmarrer de Windows 95.\n\rAppuyez sur n'importe quelle touche.\n\r"
+#define TEXT_NO_RAM                             "M√©moire vive (RAM) insuffisante.\n"
+#define TEXT_USE_START_MENU				 "\n\rSi vous √™tes dans Windows 95 vous devez lancer Alerte Rouge\r\nDOS √† partir du menu D√©marrer de Windows 95.\n\rAppuyez sur n'importe quelle touche.\n\r"
 #define TEXT_SETUP_FIRST                "Lancez d'abord le programme de configuration SETUP.\n"
-#define TEXT_NO_MOUSE                   "Alerte Rouge ne peut pas dÇtecter votre gestionnaire de souris."
+#define TEXT_NO_MOUSE                   "Alerte Rouge ne peut pas d√©tecter votre gestionnaire de souris."
 #define TEXT_FILE_ERROR         "ERREUR DE FICHIER"
 #define TEXT_PRESS_KEY                  "Appuyez sur une touche pour recommencer."
 #define TEXT_ESC_KEY                    "Appuyez sur Echap pour quitter le programme."
@@ -106,12 +106,12 @@
 #define TEXT_STOP                               "Stop"
 #define TEXT_CONTINUE                   "Continuer"
 #define TEXT_OPTIONS                    "Alerte Rouge (c) 1996, Westwood Studios\r\n" \
-										"ParamËtres:\r\n" \
-										"  -DESTNET  = SpÇcifier le numÇro de rÇseau du systäme de destination\r\n" \
+										"Param√ûtres:\r\n" \
+										"  -DESTNET  = Sp√©cifier le num√©ro de r√©seau du syst√®me de destination\r\n" \
 										"              (Syntaxe: DESTNETxx.xx.xx.xx)\r\n" \
-										"  -SOCKET   = ID Socket rÇseau (0  16383)\r\n" \
+										"  -SOCKET   = ID Socket r√©seau (0  16383)\r\n" \
 										"  -STEALTH  = Cacher les noms en mode multijoueurs (\"Mode Boss\")\r\n" \
-										"  -MESSAGES = Autorise les messages extÇrieurs Ö ce jeu.\r\n" \
+										"  -MESSAGES = Autorise les messages ext√©rieurs √† ce jeu.\r\n" \
 										"\r\n"
 #endif
 

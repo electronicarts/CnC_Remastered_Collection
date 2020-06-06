@@ -144,22 +144,22 @@ void MapEditClass::Handle_Teams(char const * caption)
 /***************************************************************************
  * MapEditClass::Select_Team -- user selects a team from a list            *
  *                                                                         *
- *    ��������������������������������������������������������Ŀ           *
- *    �                         Teams                          �           *
- *    �    ����������������������������������������������Ŀ    �           *
- *    �    � Name     House    Class:Count,Class:Count  ��    �           *
- *    �    � Name     House    Class:Count,Class:Count  �Ĵ    �           *
- *    �    � Name     House    Class:Count,Class:Count  � �    �           *
- *    �    � Name     House    Class:Count,Class:Count  � �    �           *
- *    �    �                                            � �    �           *
- *    �    �                                            � �    �           *
- *    �    �                                            �Ĵ    �           *
- *    �    �                                            ��    �           *
- *    �    ������������������������������������������������    �           *
- *    �                                                        �           *
- *    �      [Edit]        [New]        [Delete]      [OK]     �           *
- *    �                                                        �           *
- *    ����������������������������������������������������������           *
+ *    ┌────────────────────────────────────────────────────────┐           *
+ *    │                         Teams                          │           *
+ *    │    ┌────────────────────────────────────────────┬─┐    │           *
+ *    │    │ Name     House    Class:Count,Class:Count  ││    │           *
+ *    │    │ Name     House    Class:Count,Class:Count  ├─┤    │           *
+ *    │    │ Name     House    Class:Count,Class:Count  │ │    │           *
+ *    │    │ Name     House    Class:Count,Class:Count  │ │    │           *
+ *    │    │                                            │ │    │           *
+ *    │    │                                            │ │    │           *
+ *    │    │                                            ├─┤    │           *
+ *    │    │                                            ││    │           *
+ *    │    └────────────────────────────────────────────┴─┘    │           *
+ *    │                                                        │           *
+ *    │      [Edit]        [New]        [Delete]      [OK]     │           *
+ *    │                                                        │           *
+ *    └────────────────────────────────────────────────────────┘           *
  *                                                                         *
  * INPUT:                                                                  *
  *      none.                                                              *
@@ -473,29 +473,29 @@ int MapEditClass::Select_Team(char const * caption)
 /***************************************************************************
  * MapEditClass::Edit_Team -- user edits a team's options                  *
  *                                                                         *
- *  ���������������������������������������������������������������Ŀ      *
- *  �                         Team Editor                           �      *
- *  �                                                               �      *
- *  �            Name ______               [Roundabout]             �      *
- *  �        Priority ______  [   GDI   ]  [Learning  ]             �      *
- *  �         Max Num ______  [   NOD   ]  [Suicide   ]             �      *
- *  �        Init Num ______               [Autocreate]             �      *
- *  �            Fear ______               [Mercenary ]             �      *
- *  �                                      [Prebuild  ]             �      *
- *  �                                      [Reinforce ]             �      *
- *  �                                                               �      *
- *  �  ���������������������Ŀ             ���������������������Ŀ  �      *
- *  �  �                   �^�             �                   �^�  �      *
- *  �  �                   �Ĵ  [Add >>]   �                   �Ĵ  �      *
- *  �  �                   � �  [Insert]   �                   � �  �      *
- *  �  �                   � �  [Delete]   �                   � �  �      *
- *  �  �                   �Ĵ    ____     �                   �Ĵ  �      *
- *  �  �                   �v�             �                   �v�  �      *
- *  �  �����������������������             �����������������������  �      *
- *  �                                                               �      *
- *  �        [Members]          [Cancel]           [OK]             �      *
- *  �                                                               �      *
- *  �����������������������������������������������������������������      *
+ *  ┌───────────────────────────────────────────────────────────────┐      *
+ *  │                         Team Editor                           │      *
+ *  │                                                               │      *
+ *  │            Name ______               [Roundabout]             │      *
+ *  │        Priority ______  [   GDI   ]  [Learning  ]             │      *
+ *  │         Max Num ______  [   NOD   ]  [Suicide   ]             │      *
+ *  │        Init Num ______               [Autocreate]             │      *
+ *  │            Fear ______               [Mercenary ]             │      *
+ *  │                                      [Prebuild  ]             │      *
+ *  │                                      [Reinforce ]             │      *
+ *  │                                                               │      *
+ *  │  ┌───────────────────┬─┐             ┌───────────────────┬─┐  │      *
+ *  │  │                   │^│             │                   │^│  │      *
+ *  │  │                   ├─┤  [Add >>]   │                   ├─┤  │      *
+ *  │  │                   │ │  [Insert]   │                   │ │  │      *
+ *  │  │                   │ │  [Delete]   │                   │ │  │      *
+ *  │  │                   ├─┤    ____     │                   ├─┤  │      *
+ *  │  │                   │v│             │                   │v│  │      *
+ *  │  └───────────────────┴─┘             └───────────────────┴─┘  │      *
+ *  │                                                               │      *
+ *  │        [Members]          [Cancel]           [OK]             │      *
+ *  │                                                               │      *
+ *  └───────────────────────────────────────────────────────────────┘      *
  *                                                                         *
  * INPUT:                                                                  *
  *      none.                                                              *
@@ -1387,24 +1387,24 @@ int MapEditClass::Edit_Team(void)
  * 10 pixels are left between rows of objects, so the # of that type of    *
  * object can be displayed underneath the object.                          *
  *                                                                         *
- *  �������������������������������������������������Ŀ                    *
- *  �                 Team Members                    �                    *
- *  �                                                 �                    *
- *  �  �������������������������������������������Ŀ  �                    *
- *  �  �   �   �   �   �   �   �   �   �   �   �   �  �                    *
- *  �  �������������������������������������������Ĵ  �                    *
- *  �  �   �   �   �   �   �   �   �   �   �   �   �  �                    *
- *  �  �������������������������������������������Ĵ  �                    *
- *  �  �   �   �   �   �   �   �   �   �   �   �   �  �                    *
- *  �  �������������������������������������������Ĵ  �                    *
- *  �  �   �   �   �   �   �   �   �   �   �   �   �  �                    *
- *  �  �������������������������������������������Ĵ  �                    *
- *  �  �   �   �   �   �   �   �   �   �   �   �   �  �                    *
- *  �  �������������������������������������������Ĵ  �                    *
- *  �  �   �   �   �   �   �   �   �   �   �   �   �  �                    *
- *  �  ���������������������������������������������  �                    *
- *  �               [OK]      [Cancel]                �                    *
- *  ���������������������������������������������������                    *
+ *  ┌─────────────────────────────────────────────────┐                    *
+ *  │                 Team Members                    │                    *
+ *  │                                                 │                    *
+ *  │  ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐  │                    *
+ *  │  │   │   │   │   │   │   │   │   │   │   │   │  │                    *
+ *  │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤  │                    *
+ *  │  │   │   │   │   │   │   │   │   │   │   │   │  │                    *
+ *  │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤  │                    *
+ *  │  │   │   │   │   │   │   │   │   │   │   │   │  │                    *
+ *  │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤  │                    *
+ *  │  │   │   │   │   │   │   │   │   │   │   │   │  │                    *
+ *  │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤  │                    *
+ *  │  │   │   │   │   │   │   │   │   │   │   │   │  │                    *
+ *  │  ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤  │                    *
+ *  │  │   │   │   │   │   │   │   │   │   │   │   │  │                    *
+ *  │  └───┴───┴───┴───┴───┴───┴───┴───┴───┴───┴───┘  │                    *
+ *  │               [OK]      [Cancel]                │                    *
+ *  └─────────────────────────────────────────────────┘                    *
  *                                                                         *
  * INPUT:                                                                  *
  *      house      house to display objects for                            *

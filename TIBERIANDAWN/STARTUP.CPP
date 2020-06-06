@@ -203,10 +203,10 @@ int DLL_Startup(const char * command_line_in)
 
 	if (Ram_Free(MEM_NORMAL) < 5000000) {
 #ifdef GERMAN
-		printf("Zuwenig Hauptspeicher verfÅgbar.\n");
+		printf("Zuwenig Hauptspeicher verf√ºgbar.\n");
 #else
 #ifdef FRENCH
-		printf("MÇmoire vive (RAM) insuffisante.\n");
+		printf("M√©moire vive (RAM) insuffisante.\n");
 #else
 		printf("Insufficient RAM available.\n");
 #endif
@@ -322,10 +322,10 @@ int DLL_Startup(const char * command_line_in)
 		Sleep (1000);
 		if (WindowsTimer->Get_System_Tick_Count() == time_test){
 #ifdef FRENCH
-			MessageBox(0, "Error - L'horloge systäme n'a pas pu s'initialiser en raison de l'instabilitÇ du sytäme. Vous devez redÇmarrer Windows.",  "Command & Conquer" , MB_OK|MB_ICONSTOP);
+			MessageBox(0, "Error - L'horloge syst√®me n'a pas pu s'initialiser en raison de l'instabilit√© du syt√®me. Vous devez red√©marrer Windows.",  "Command & Conquer" , MB_OK|MB_ICONSTOP);
 #else
 #ifdef	GERMAN
-			MessageBox(0, "Fehler - das Timer-System konnte aufgrund einer InstabilitÑt des Systems nicht initialisiert werden. Bitte starten Sie Windows neu.", "Command & Conquer", MB_OK|MB_ICONSTOP);
+			MessageBox(0, "Fehler - das Timer-System konnte aufgrund einer Instabilit√§t des Systems nicht initialisiert werden. Bitte starten Sie Windows neu.", "Command & Conquer", MB_OK|MB_ICONSTOP);
 #else
 			MessageBox(0, "Error - Timer system failed to start due to system instability. You need to restart Windows.", "Command & Conquer", MB_OK|MB_ICONSTOP);
 #endif	//GERMAN
@@ -359,7 +359,7 @@ int DLL_Startup(const char * command_line_in)
 		if (Disk_Space_Available() < INIT_FREE_DISK_SPACE) {
 #ifdef GERMAN
 			char	disk_space_message [512];
-			sprintf (disk_space_message, "Nicht genug Festplattenplatz fÅr Command & Conquer.\nSie brauchen %d MByte freien Platz auf der Festplatte.", (INIT_FREE_DISK_SPACE) / (1024 * 1024));
+			sprintf (disk_space_message, "Nicht genug Festplattenplatz f√ºr Command & Conquer.\nSie brauchen %d MByte freien Platz auf der Festplatte.", (INIT_FREE_DISK_SPACE) / (1024 * 1024));
 			MessageBox(NULL, disk_space_message, "Command & Conquer", MB_ICONEXCLAMATION|MB_OK);
 			if ( WindowsTimer )
 				delete WindowsTimer;

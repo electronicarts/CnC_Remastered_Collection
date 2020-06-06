@@ -46,74 +46,74 @@
 Map (screen) class heirarchy.
 
  MapeditClass (most derived class) -- scenario editor
-        ³
+        â”‚
    MouseClass -- handles mouse animation and display control
-        ³
+        â”‚
   ScrollClass -- map scroll handler
-        ³
+        â”‚
     HelpClass -- pop-up help text handler
-        ³
+        â”‚
      TabClass -- file folder tab screen mode control dispatcher
-        ³
+        â”‚
  SidebarClass -- displays and controls construction list sidebar
-        ³
+        â”‚
    PowerClass -- display power production/consumption bargraph
-        ³
+        â”‚
    RadarClass -- displays and controls radar map
-        ³
+        â”‚
  DisplayClass -- general tactical map display handler
-        ³
+        â”‚
      MapClass -- general tactical map data handler
-        ³
+        â”‚
  GScreenClass (pure virtual base class) -- generic screen control
 
                           AbstractClass
-                                  ³
-                                  ³
-                                  ³
-                                  ³
+                                  â”‚
+                                  â”‚
+                                  â”‚
+                                  â”‚
                             ObjectClass
-                                  ³
-       ÚÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄ¿
-   AnimClass  ³  TemplateClass    ³        ÃÄ FuseClass     ³    TerrainClass
-              ³                   ³        ÃÄ FlyClass      ³
-              ³                   ³  BulletClass            ³
+                                  â”‚
+       â”Œâ”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+   AnimClass  â”‚  TemplateClass    â”‚        â”œâ”€ FuseClass     â”‚    TerrainClass
+              â”‚                   â”‚        â”œâ”€ FlyClass      â”‚
+              â”‚                   â”‚  BulletClass            â”‚
        OverlayClass        MissionClass               SmudgeClass
-                                  ³
+                                  â”‚
                              RadioClass
-                                  ³
-                                  ÃÄ CrewClass
-                                  ÃÄ FlasherClass
-                                  ÃÄ StageClass
-                                  ÃÄ CargoClass
+                                  â”‚
+                                  â”œâ”€ CrewClass
+                                  â”œâ”€ FlasherClass
+                                  â”œâ”€ StageClass
+                                  â”œâ”€ CargoClass
                             TechnoClass
-                                  ³
-                       ÚÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+                                  â”‚
+                       â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
                    FootClass                           BuildingClass
-                       ³
-         ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÁÂÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-    DriveClass  InfantryClass         ÃÄ FlyClass
-         ³                      AircraftClass
-       ÚÄÁÄÄÄÄÄÄÄÄÄ¿
-       ³           ³
-       ³     VesselClass
-       ³
+                       â”‚
+         â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+    DriveClass  InfantryClass         â”œâ”€ FlyClass
+         â”‚                      AircraftClass
+       â”Œâ”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+       â”‚           â”‚
+       â”‚     VesselClass
+       â”‚
     UnitClass
 
 
                             AbstractTypeClass
-                                    ³
+                                    â”‚
                               ObjectTypeClass
-                                    ³
-             ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÅÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-             ³                      ³            ³                 ³
-       TechnoTypeClass              ³            ³                 ³
-             ³                BulletTypeClass    ³                 ³
-             ³                           TemplateTypeClass         ³
-    ÚÄÄÄÄÄÄÄÄÁÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂÄÄÄÄÄÄÄÄ¿    TerrainTypeClass
-    ³              ³           ³              ³        ³
-UnitTypeClass      ³   BuildingTypeClass      ³  VesselTypeClass
-                   ³                          ³
+                                    â”‚
+             â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+             â”‚                      â”‚            â”‚                 â”‚
+       TechnoTypeClass              â”‚            â”‚                 â”‚
+             â”‚                BulletTypeClass    â”‚                 â”‚
+             â”‚                           TemplateTypeClass         â”‚
+    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”    TerrainTypeClass
+    â”‚              â”‚           â”‚              â”‚        â”‚
+UnitTypeClass      â”‚   BuildingTypeClass      â”‚  VesselTypeClass
+                   â”‚                          â”‚
            AircraftTypeClass          InfantryTypeClass
 #endif
 
