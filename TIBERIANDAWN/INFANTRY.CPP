@@ -188,26 +188,26 @@ void InfantryClass::Debug_Dump(MonoClass *mono) const
 {
 	Validate();
 	mono->Set_Cursor(0, 0);mono->Print(
-		"ï¿½Name:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Mission:ï¿½ï¿½ï¿½ï¿½TarCom:ï¿½NavCom:ï¿½Radio:ï¿½Coord:ï¿½ï¿½ï¿½HeadTo:ï¿½ï¿½St:Ä¿\n"
-		"ï¿½                   ï¿½           ï¿½       ï¿½       ï¿½      ï¿½        ï¿½        ï¿½    ï¿½\n"
-		"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Nï¿½Yï¿½Health:ï¿½ï¿½Body:ï¿½Turret:ï¿½Speed:ï¿½Path:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Cargo:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä´\n"
-		"ï¿½Active........ï¿½ ï¿½ ï¿½        ï¿½     ï¿½       ï¿½      ï¿½            ï¿½               ï¿½\n"
-		"ï¿½Limbo.........ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä´\n"
-		"ï¿½Owned.........ï¿½ ï¿½ ï¿½Last Message:                                             ï¿½\n"
-		"ï¿½Discovered....ï¿½ ï¿½ ï¿½Timer:ï¿½Arm:ï¿½Track:ï¿½Tiberium:ï¿½Flash:ï¿½Stage:ï¿½Team:ï¿½ï¿½ï¿½ï¿½ï¿½Arch:ï¿½\n"
-		"ï¿½Selected......ï¿½ ï¿½ ï¿½      ï¿½    ï¿½      ï¿½         ï¿½      ï¿½      ï¿½         ï¿½     ï¿½\n"
-		"ï¿½Teathered.....ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n"
-		"ï¿½Locked on Map.ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½Is Prone......ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½Is A Loner....ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½Deploying.....ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½Rotating......ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½Firing........ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½Driving.......ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½To Look.......ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½Recoiling.....ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½To Display....ï¿½ ï¿½ ï¿½                                                           \n"
-		"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½                                                           \n");
+		"ÚName:ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂMission:ÄÄÄÂTarCom:ÂNavCom:ÂRadio:ÂCoord:ÄÄÂHeadTo:ÄÂSt:Ä¿\n"
+		"³                   ³           ³       ³       ³      ³        ³        ³    ³\n"
+		"ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÂNÂYÂHealth:ÄÂBody:ÂTurret:ÂSpeed:ÂPath:ÁÄÄÄÄÄÄÂCargo:ÄÄÄÄÁÄÄÄÄ´\n"
+		"³Active........³ ³ ³        ³     ³       ³      ³            ³               ³\n"
+		"³Limbo.........³ ³ ÃÄÄÄÄÄÄÄÄÁÄÄÄÄÄÁÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´\n"
+		"³Owned.........³ ³ ³Last Message:                                             ³\n"
+		"³Discovered....³ ³ ÃTimer:ÂArm:ÂTrack:ÂTiberium:ÂFlash:ÂStage:ÂTeam:ÄÄÄÄÂArch:´\n"
+		"³Selected......³ ³ ³      ³    ³      ³         ³      ³      ³         ³     ³\n"
+		"³Teathered.....³ ³ ÃÄÄÄÄÄÄÁÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÁÄÄÄÄÄÄÄÄÄÁÄÄÄÄÄÙ\n"
+		"³Locked on Map.³ ³ ³                                                           \n"
+		"³Is Prone......³ ³ ³                                                           \n"
+		"³Is A Loner....³ ³ ³                                                           \n"
+		"³Deploying.....³ ³ ³                                                           \n"
+		"³Rotating......³ ³ ³                                                           \n"
+		"³Firing........³ ³ ³                                                           \n"
+		"³Driving.......³ ³ ³                                                           \n"
+		"³To Look.......³ ³ ³                                                           \n"
+		"³Recoiling.....³ ³ ³                                                           \n"
+		"³To Display....³ ³ ³                                                           \n"
+		"ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÁÄÁÄÙ                                                           \n");
 	mono->Set_Cursor(1, 1);mono->Printf("%s:%s", House->Class->IniName, Class->IniName);
 	mono->Text_Print("X", 16 + (IsProne?2:0), 10);
 	mono->Set_Cursor(33, 7);mono->Printf("%2d", Fear);
@@ -1045,6 +1045,29 @@ void InfantryClass::AI(void)
 		Stun();
 		Delete_This();
 		return;
+	}
+
+	/*
+	**	Catch infantry that may be stuck in Boxing animations and get them out of it
+	*/
+	if (!IsBoxing)
+	{
+		switch (Doing)
+		{
+		case DO_FIGHT_READY:
+		case DO_ON_GUARD:
+		case DO_PUNCH:
+		case DO_KICK:
+		case DO_PUNCH_HIT1:
+		case DO_PUNCH_HIT2:
+		case DO_KICK_HIT1:
+		case DO_KICK_HIT2:
+			Do_Action(DO_READY_WEAPON, true);
+			break;
+
+		default:
+			break;
+		}
 	}
 
 	/*
