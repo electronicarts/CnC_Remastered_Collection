@@ -2786,7 +2786,7 @@ RadioMessageType InfantryClass::Receive_Message(RadioClass * from, RadioMessageT
 		**	Just received a kick! Take some damage.
 		*/
 		case	RADIO_KICK:
-			damage = Infantry_Kick_Damage[Random_Pick(0, (int)(sizeof(Infantry_Kick_Damage) / sizeof(Infantry_Kick_Damage[0])))];
+			damage = Infantry_Kick_Damage[Random_Pick(0, (int)(sizeof(Infantry_Kick_Damage) / sizeof(Infantry_Kick_Damage[0])) - 1)];
 			if (Take_Damage(damage, 0, WARHEAD_FOOT, this) == RESULT_DESTROYED) return(RADIO_STATIC);
 			return(RADIO_ROGER);
 
@@ -2794,7 +2794,7 @@ RadioMessageType InfantryClass::Receive_Message(RadioClass * from, RadioMessageT
 		**	Just recieved a punch! Take some damage.
 		*/
 		case	RADIO_PUNCH:
-			damage = Infantry_Punch_Damage[Random_Pick(0, (int)(sizeof(Infantry_Punch_Damage) / sizeof(Infantry_Punch_Damage[0])))];
+			damage = Infantry_Punch_Damage[Random_Pick(0, (int)(sizeof(Infantry_Punch_Damage) / sizeof(Infantry_Punch_Damage[0])) - 1)];
 			if (Take_Damage(damage, 0, WARHEAD_FIST, this) == RESULT_DESTROYED) return(RADIO_STATIC);
 			return(RADIO_ROGER);
 
