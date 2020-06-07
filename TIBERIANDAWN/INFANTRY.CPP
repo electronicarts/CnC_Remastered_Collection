@@ -1269,7 +1269,7 @@ void InfantryClass::AI(void)
 	/*
 	**	Perform movement operations at this time.
 	*/
-	if (!IsFiring /*&& !IsBoxing*/) {
+	if (!IsFiring && !IsBoxing) {
 		if (!IsDriving) {
 
 			/*
