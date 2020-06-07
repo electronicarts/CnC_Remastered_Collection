@@ -2776,8 +2776,8 @@ RadioMessageType InfantryClass::Receive_Message(RadioClass * from, RadioMessageT
 			if (IsBoxing) break;
 #endif
 			if (Contact_With_Whom() == from) {
-				Do_Action(DO_ON_GUARD, true);
 				Assign_Target(Contact_With_Whom()->As_Target());
+				Do_Action(DO_ON_GUARD, true);
 				return(RADIO_ROGER);
 			}
 			return(RADIO_NEGATIVE);
