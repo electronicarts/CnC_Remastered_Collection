@@ -635,7 +635,7 @@ void InfantryClass::Draw_It(int x, int y, WindowNumberType window)
 
 #ifdef BOXING
 // BG hack to get him to face right when he's supposed to.
-	if (IsBoxing && BodyFacing<128) shapenum += 47;
+	if (IsBoxing && facing < Facing_To_32(DIR_S)) shapenum += 47;
 #endif
 
 	/*
@@ -1143,7 +1143,7 @@ void InfantryClass::AI(void)
 					if (Is_Target_Infantry(TarCom) && (Distance(TarCom)<=0x80) && (Coord_Y(Coord) == Coord_Y(object->Coord))) {
 
 						// Too close to shoot, so start hand-to-hand combat
-						if (Establish_Contact((TechnoClass *)object)) {
+						if (Transmit_Message(RADIO_HELLO, (TechnoClass *)object) == RADIO_ROGER) {
 							if (Transmit_Message(RADIO_PREPARE_TO_BOX) == RADIO_ROGER) {
 								IsBoxing = true;
 								Do_Action(DO_ON_GUARD,true);
