@@ -530,7 +530,7 @@ CCDebugString ("C&C95 - Place packet received\n");
 			break;
 
 		/*
-		**	This event starts production of the speicified object type. The house can
+		**	This event starts production of the specified object type. The house can
 		**	determine from the type and ID value, what object to begin production on and
 		**	what factory to use.
 		*/
