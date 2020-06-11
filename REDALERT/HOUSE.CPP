@@ -5582,7 +5582,7 @@ int HouseClass::AI_Base_Defense(void)
 		for (HousesType h = HOUSE_FIRST; h < HOUSE_COUNT; h++) {
 			HouseClass * house = HouseClass::As_Pointer(h);
 
-			if (house && house->IsActive && house->IsHuman && !Is_Ally(house)) {
+			if (house && house->IsActive && !Is_Ally(house)) {
 				if ((house->ActiveAScan & (AIRCRAFTF_ORCA|AIRCRAFTF_TRANSPORT|AIRCRAFTF_HELICOPTER)) || (house->ActiveBScan & STRUCTF_HELIPAD)) {
 					nothreat = false;
 					break;
