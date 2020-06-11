@@ -5632,7 +5632,7 @@ int HouseClass::AI_Building(void)
 		for (HousesType h = HOUSE_FIRST; h < HOUSE_COUNT; h++) {
 			HouseClass const * hptr = HouseClass::As_Pointer(h);
 
-			if (hptr != NULL && hptr->IsActive && hptr->IsHuman && quant < hptr->CurBuildings) {
+			if (hptr != NULL && hptr->IsActive && quant < hptr->CurBuildings) {
 				quant = hptr->CurBuildings;
 			}
 		}
