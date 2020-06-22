@@ -539,12 +539,14 @@ bool Load_Game(const char *file_name)
 	Map.Init_IO();
 	Map.Flag_To_Redraw(true);
 
+	Fixup_Scenario();
+
 	ScenarioInit = 0;
 
 	/*
 	** Fixup remap tables. ST - 2/28/2020 1:50PM
 	*/
-	for (HousesType house = HOUSE_MULTI1; house < HOUSE_COUNT; house++) {
+	for (HousesType house = HOUSE_FIRST; house < HOUSE_COUNT; house++) {
 		HouseClass * hptr = HouseClass::As_Pointer(house);
 		if (hptr && hptr->IsActive) {
 			hptr->Init_Data(hptr->RemapColor, hptr->ActLike, hptr->Credits);

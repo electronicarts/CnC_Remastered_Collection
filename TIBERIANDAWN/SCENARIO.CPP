@@ -139,16 +139,6 @@ bool Start_Scenario(char *root, bool briefing)
 #endif
 
 	/*
-	** Hack for laser-firing Orcas in the PATSUX secret mission
-	*/
-	if (GameToPlay == GAME_NORMAL && Scenario == 72) {
-		((AircraftTypeClass&)AircraftTypeClass::As_Reference(AIRCRAFT_ORCA)).Primary = WEAPON_OBELISK_LASER;
-	}
-	else {
-		((AircraftTypeClass&)AircraftTypeClass::As_Reference(AIRCRAFT_ORCA)).Primary = WEAPON_DRAGON;
-	}
-
-	/*
 	** Set the options values, since the palette has been initialized by Read_Scenario
 	*/
 	CCDebugString ("C&C95 - About to call Options.Set.\n");
@@ -786,4 +776,27 @@ bool Restate_Mission(char const * name, int button1, int button2)
 #endif
 	}
 	return(false);
+}
+
+void Fixup_Scenario(void)
+{
+	/*
+	** "Fraidycat" civilians avoid wandering into Tiberium for SCG08EB, since they're mission-critical.
+	*/
+	bool is_scg08ea = GameToPlay == GAME_NORMAL && PlayerPtr->ActLike == HOUSE_GOOD && Scenario == 8 && ScenVar == SCEN_VAR_B;
+	for (InfantryType index = INFANTRY_FIRST; index < INFANTRY_COUNT; index++) {
+		InfantryTypeClass& infantry_type = (InfantryTypeClass&)InfantryTypeClass::As_Reference(index);
+		if (infantry_type.IsFraidyCat) {
+			infantry_type.IsAvoidingTiberium = is_scg08ea;
+		}
+	}
+
+	/*
+	** Laser-firing Orcas in the PATSUX secret mission
+	*/
+	if (GameToPlay == GAME_NORMAL && Scenario == 72) {
+		((AircraftTypeClass&)AircraftTypeClass::As_Reference(AIRCRAFT_ORCA)).Primary = WEAPON_OBELISK_LASER;
+	} else {
+		((AircraftTypeClass&)AircraftTypeClass::As_Reference(AIRCRAFT_ORCA)).Primary = WEAPON_DRAGON;
+	}
 }

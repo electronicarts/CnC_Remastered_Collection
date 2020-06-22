@@ -218,6 +218,11 @@ void CellClass::Code_Pointers(void)
 	if (IsTrigger) {
 		CellTriggers[Cell_Number()] = (TriggerClass *)CellTriggers[Cell_Number()]->As_Target();
 	}
+
+	/*
+	------------------------ Convert flag pointer -------------------------
+	*/
+	assert(CTFFlag == NULL);
 }
 
 
@@ -299,6 +304,11 @@ void CellClass::Decode_Pointers(void)
 		CellTriggers[Cell_Number()] = As_Trigger( (TARGET)CellTriggers[Cell_Number()], false );
 		Check_Ptr((void *)CellTriggers[Cell_Number()],__FILE__,__LINE__);
 	}
+
+	/*
+	**	Convert flag pointer.
+	*/
+	CTFFlag = NULL;
 }
 
 
@@ -1011,6 +1021,13 @@ void DisplayClass::Decode_Pointers(void)
 void MapClass::Code_Pointers(void)
 {
 	CELL cell;
+
+	/*
+	------------------------- Destroy all flag animations --------------------
+	*/
+	for (cell = 0; cell < MAP_CELL_TOTAL; cell++) {
+		(*this)[cell].Flag_Destroy();
+	}
 
 	/*
 	------------------------- Code the cell pointers -------------------------

@@ -4842,7 +4842,7 @@ extern "C" int __cdecl Confine_Rect ( int * x , int * y , int w , int h , int wi
 
 
 /*
-; $Header: //depot/Projects/Mobius/QA/Project/Run/SOURCECODE/REDALERT/WIN32LIB/DrawMisc.cpp#33 $
+; $Header: //depot/Projects/Mobius/QA/Project/Run/SOURCECODE/REDALERT/WIN32LIB/DrawMisc.cpp#57 $
 ;***************************************************************************
 ;**   C O N F I D E N T I A L --- W E S T W O O D   A S S O C I A T E S   **
 ;***************************************************************************

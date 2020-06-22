@@ -137,7 +137,7 @@ class UnitClass :	public DriveClass
 		bool Try_To_Deploy(void);
 		virtual void Scatter(COORDINATE threat, bool forced=false, bool nokidding=false);
 
-		bool Tiberium_Check(CELL &center, int x, int y);
+		int Tiberium_Check(CELL &center, int x, int y);
 		bool Flag_Attach(HousesType house);
 		bool Flag_Remove(void);
 		bool Goto_Tiberium(int radius);
@@ -185,6 +185,7 @@ class UnitClass :	public DriveClass
 		virtual ActionType What_Action(ObjectClass const * object) const;
 		virtual void Active_Click_With(ActionType action, ObjectClass * object);
 		virtual void Active_Click_With(ActionType action, CELL cell);
+		virtual void Player_Assign_Mission(MissionType mission, TARGET target, TARGET destination);
 
 		/*
 		**	Combat related.

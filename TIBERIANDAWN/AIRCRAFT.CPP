@@ -607,6 +607,10 @@ int AircraftClass::Mission_Hunt(void)
 {
 	Validate();
 	if (Class->IsFixedWing) {
+		if (Class->Primary == WEAPON_NONE && Class->Secondary == WEAPON_NONE) {
+			Assign_Mission(MISSION_RETREAT);
+			return(1);
+		}
 		enum {
 			LOOK_FOR_TARGET,
 			FLY_TO_TARGET,
@@ -1600,10 +1604,15 @@ ResultType AircraftClass::Take_Damage(int & damage, int distance, WarheadType wa
 
 	switch (res) {
 		case RESULT_DESTROYED:
-			Kill_Cargo(source);
-			Death_Announcement();
-			new AnimClass(ANIM_FBALL1, Target_Coord());
-			Delete_This();
+			{
+				Kill_Cargo(source);
+				Death_Announcement();
+				COORDINATE coord = Target_Coord();
+				if (!(coord & 0xC000C000L)) {
+					new AnimClass(ANIM_FBALL1, coord);
+				}
+				Delete_This();
+			}
 			break;
 
 		default:

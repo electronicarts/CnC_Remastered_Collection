@@ -1621,23 +1621,28 @@ ResultType AircraftClass::Take_Damage(int & damage, int distance, WarheadType wa
 	*/
 	switch (res) {
 		case RESULT_DESTROYED:
-			Kill_Cargo(source);
-			Death_Announcement();
-			new AnimClass(ANIM_FBALL1, Target_Coord());
+			{
+				Kill_Cargo(source);
+				Death_Announcement();
+				COORDINATE coord = Target_Coord();
+				if (!(coord & HIGH_COORD_MASK)) {
+					new AnimClass(ANIM_FBALL1, coord);
+				}
 
-			/*
-			**	Parachute a survivor if possible.
-			*/
-			if (Class->IsCrew && Percent_Chance(90) && Map[Center_Coord()].Is_Clear_To_Move(SPEED_FOOT, true, false)) {
-				InfantryClass * infantry = new InfantryClass(INFANTRY_E1, House->Class->House);
-				if (infantry != NULL) {
-					if (!infantry->Paradrop(Center_Coord())) {
-						delete infantry;
+				/*
+				**	Parachute a survivor if possible.
+				*/
+				if (Class->IsCrew && Percent_Chance(90) && Map[Center_Coord()].Is_Clear_To_Move(SPEED_FOOT, true, false)) {
+					InfantryClass * infantry = new InfantryClass(INFANTRY_E1, House->Class->House);
+					if (infantry != NULL) {
+						if (!infantry->Paradrop(Center_Coord())) {
+							delete infantry;
+						}
 					}
 				}
-			}
 
-			delete this;
+				delete this;
+			}
 			break;
 
 		default:

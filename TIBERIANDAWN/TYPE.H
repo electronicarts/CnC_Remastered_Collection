@@ -1112,6 +1112,12 @@ class InfantryTypeClass : public TechnoTypeClass
 		unsigned IsCivilian:1;
 
 		/*
+		**	For "fraidycat" infantry types that will run away from any damage causing
+		**	events, this controls whether they avoid wandering into Tiberium.
+		*/
+		unsigned IsAvoidingTiberium:1;
+
+		/*
 		**	This value represents the unit class. It can serve as a unique
 		**	identification number for this unit class.
 		*/
@@ -1642,7 +1648,7 @@ class AnimTypeClass : public ObjectTypeClass
 		**	This is the normal loop count for this animation. Usually this is one, but
 		**	for some animations, it may be larger.
 		*/
-		unsigned char Loops;
+		char Loops;
 
 		/*
 		**	This is the sound effect to play when this animation starts. Usually, this

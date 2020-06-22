@@ -980,7 +980,7 @@ void MapClass::Logic(void)
 				if (Map.In_Radar(cell)) {
 					FacingType offset = Random_Pick(FACING_N, FACING_NW);
 					for (FacingType index = FACING_N; index < FACING_COUNT; index++) {
-						CellClass *newcell = &(*this)[cell].Adjacent_Cell(index+offset);
+						CellClass *newcell = (*this)[cell].Adjacent_Cell(index+offset);
 
 						if (newcell && newcell->Cell_Object() == NULL && newcell->Land_Type() == LAND_CLEAR && newcell->Overlay == OVERLAY_NONE) {
 							bool found = false;

@@ -2323,6 +2323,7 @@ typedef enum AnimType : char {
 	ANIM_CRATE_TQUAKE,
 	ANIM_PARA_BOMB,
 	ANIM_MINE_EXP1,
+	ANIM_FLAG,
 
 #ifdef FIXIT_ANTS
 	ANIM_ANT1_DEATH,

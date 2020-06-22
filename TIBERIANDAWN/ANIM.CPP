@@ -270,6 +270,12 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window)
 				case ANIM_ATOM_BLAST:
 					transtable = Map.UnitShadow;
 					break;
+
+				case ANIM_FLAG:
+					x += (ICON_PIXEL_W / 2) - 2;
+					y += (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile);
+					transtable = Map.UnitShadow;
+					break;
 			}
 
 			/*
@@ -285,7 +291,11 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window)
 			*/
 			if (IsAlternate) {
 				flags = flags | SHAPE_FADING;
-				remap = Map.RemapTables[HOUSE_GOOD][0];
+				if (OwnerHouse != HOUSE_NONE) {
+					remap = HouseClass::As_Pointer(OwnerHouse)->Remap_Table(false, false);
+				} else {
+					remap = Map.RemapTables[HOUSE_GOOD][0];
+				}
 			}
 			if (transtable) flags = flags | SHAPE_GHOST;
 
@@ -380,6 +390,8 @@ short const * AnimClass::Overlap_List(void) const
  		REFRESH_EOL
 	};
 
+	static short const OverlapFlag[] = { 0, 1, -MAP_CELL_W, -(MAP_CELL_W-1), MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL };
+
 	switch (Class->Type) {
 		case ANIM_CHEM_N:
 		case ANIM_FLAME_N:
@@ -418,6 +430,9 @@ short const * AnimClass::Overlap_List(void) const
 
 		case ANIM_ATOM_BLAST:
 			return(OverlapAtom);
+
+		case ANIM_FLAG:
+			return(OverlapFlag);
 
 		default:
 			break;
@@ -550,12 +565,12 @@ void AnimClass::operator delete(void *ptr)
  *   05/31/1994 JLB : Created.                                                                 *
  *   08/03/1994 JLB : Added a delayed affect parameter.                                        *
  *=============================================================================================*/
-AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay, unsigned char loop, bool alt) :
+AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay, char loop, bool alt) :
 	Class(&AnimTypeClass::As_Reference(animnum))
 {
 	Object = 0;
 	SortTarget = TARGET_NONE;
-	Owner = HOUSE_NONE;
+	OwnerHouse = HOUSE_NONE;
 
 	if (Class->Stages == -1) {
 		((int&)Class->Stages) = Get_Build_Frame_Count(Class->Get_Image_Data());
@@ -590,8 +605,12 @@ AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay
 	*/
 	Delay = timedelay;
 
-	Loops = (unsigned char)(MAX(loop, (unsigned char)1) * Class->Loops);
-	Loops = (unsigned char)MAX(Loops, (unsigned char)1);
+	if (Class->Loops >= 0) {
+		Loops = (char)(MAX(loop, (char)1) * Class->Loops);
+		Loops = (char)MAX(Loops, (char)1);
+	} else {
+		Loops = Class->Loops;
+	}
 
 	IsToDelete = false;
 	IsBrandNew = true;
@@ -798,8 +817,8 @@ void AnimClass::AI(void)
 				**	Determine if this animation should loop another time. If so, then start the loop
 				**	but if not, then proceed into the animation termination handler.
 				*/
-				if (Loops) Loops--;
-				if (Loops) {
+				if (Loops > 0) Loops--;
+				if (Loops != 0) {
 					Set_Stage(Class->LoopStart);
 				} else {
 					if (Class->VirtualAnim != ANIM_NONE) {
@@ -992,11 +1011,11 @@ void AnimClass::Middle(void)
 		*/
 		BuildingClass * building = NULL;
 		TechnoClass * backup = NULL;
-		if (Owner != HOUSE_NONE) {
+		if (OwnerHouse != HOUSE_NONE) {
 			for (int index = 0; index < Logic.Count(); index++) {
 				ObjectClass * obj = Logic[index];
 
-				if (obj && obj->Is_Techno() && obj->Owner() == Owner) {
+				if (obj && obj->Is_Techno() && obj->Owner() == OwnerHouse) {
 					backup = (TechnoClass *)obj;
 					if (obj->What_Am_I() == RTTI_BUILDING && *((BuildingClass *)obj) == STRUCT_TEMPLE) {
 						building = (BuildingClass *)obj;
@@ -1108,11 +1127,11 @@ void AnimClass::Middle(void)
 		case ANIM_ION_CANNON: {
 				BuildingClass * building = NULL;
 				TechnoClass * backup = NULL;
-				if (Owner != HOUSE_NONE) {
+				if (OwnerHouse != HOUSE_NONE) {
 					for (int index = 0; index < Logic.Count(); index++) {
 						ObjectClass * obj = Logic[index];
 
-						if (obj && obj->Is_Techno() && obj->Owner() == Owner && !obj->IsInLimbo) {
+						if (obj && obj->Is_Techno() && obj->Owner() == OwnerHouse && !obj->IsInLimbo) {
 							backup = (TechnoClass *)obj;
 							if (obj->What_Am_I() == RTTI_BUILDING && *((BuildingClass *)obj) == STRUCT_EYE) {
 								building = (BuildingClass *)obj;

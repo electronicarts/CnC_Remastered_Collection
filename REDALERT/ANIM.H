@@ -51,7 +51,7 @@ class AnimClass : public ObjectClass, public StageClass {
 
 	public:
 
-		AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay=0, unsigned char loop=1);
+		AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay=0, char loop=1);
 		AnimClass(NoInitClass const & x) : ObjectClass(x), Class(x), StageClass(x) {};
 		virtual ~AnimClass(void);
 
@@ -79,6 +79,7 @@ class AnimClass : public ObjectClass, public StageClass {
 		void Set_Visible_Flags(unsigned flags) { VisibleFlags = flags; }
 		unsigned Get_Visible_Flags() const { return (Delay == 0) ? VisibleFlags : 0; }
 
+		virtual HousesType Owner(void) const {return OwnerHouse;};
 		virtual bool Can_Place_Here(COORDINATE ) const {return true;}
 		virtual bool Mark(MarkType mark=MARK_CHANGE);
 		virtual bool Render(bool forced) const;
@@ -121,7 +122,7 @@ class AnimClass : public ObjectClass, public StageClass {
 		**	This counter tells how many more times the animation should loop before it
 		**	terminates.
 		*/
-		unsigned char Loops;
+		char Loops;
 
 	protected:
 		void Middle(void);

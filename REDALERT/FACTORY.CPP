@@ -445,29 +445,13 @@ bool FactoryClass::Start(void)
 			int time;
 
 			if (Object) {
-				time = Object->Time_To_Build();
-//			} else {
-//				time = TICKS_PER_MINUTE * 5;
+				time = Object->Class_Of().Time_To_Build(House->Class->House);
 			}
 
-			/*
-			**	Adjust time according to IQ setting of computer controlled house. The
-			**	build time will range from double normal time at the slowest to
-			**	just normal time at the fastest.
-			*/
-			if (!House->IsHuman && Rule.Diff[House->Difficulty].IsBuildSlowdown) {
-				time = time * Inverse(fixed(House->IQ+Rule.MaxIQ, Rule.MaxIQ*2));
-			}
+			time /= STEP_COUNT;
+			time = Bound(time, 1, 255);
 
-			int rate = time / Bound(House->Power_Fraction(), fixed(1, 16), fixed(1));
-//			int frac = House->Power_Fraction();
-//			frac = Bound(frac, 0x0010, 0x0100);
-//			int rate = (time*256) / frac;
-
-			rate /= STEP_COUNT;
-			rate = Bound(rate, 1, 255);
-
-			Set_Rate(rate);
+			Set_Rate(time);
 			IsSuspended = false;
 			return(true);
 		}

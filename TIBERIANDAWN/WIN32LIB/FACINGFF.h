@@ -321,7 +321,7 @@ int __cdecl Desired_Facing8(long x1, long y1, long x2, long y2);
 
 
 /*
-	; $Header: //depot/Projects/Mobius/QA/Project/Run/SOURCECODE/TIBERIANDAWN/WIN32LIB/FACINGFF.h#33 $
+	; $Header: //depot/Projects/Mobius/QA/Project/Run/SOURCECODE/TIBERIANDAWN/WIN32LIB/FACINGFF.h#57 $
 ;***************************************************************************
 ;**   C O N F I D E N T I A L --- W E S T W O O D   A S S O C I A T E S   **
 ;***************************************************************************

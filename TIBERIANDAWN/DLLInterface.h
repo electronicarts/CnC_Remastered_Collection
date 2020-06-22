@@ -28,7 +28,7 @@ struct CarryoverObjectStruct;
 ** 
 ** 
 */
-#define CNC_DLL_API_VERSION		0x100
+#define CNC_DLL_API_VERSION		0x101
 
 
 
@@ -623,6 +623,7 @@ struct EventCallbackStruct {
 			//
 			// Single-player data
 			//
+			bool IsHuman;
 			bool PlayerWins;
 			const char* MovieName;
 			const char* MovieName2;

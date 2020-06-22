@@ -358,6 +358,9 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 		*/
 		case RADIO_OVER_OUT:
 			Begin_Mode(BSTATE_IDLE);
+			if (*this == STRUCT_REPAIR) {
+				Assign_Mission(MISSION_GUARD);
+			}
 			TechnoClass::Receive_Message(from, message, param);
 			return(RADIO_ROGER);
 
@@ -4811,8 +4814,8 @@ int BuildingClass::Mission_Unload(void)
 					**	Scatter everything around the weapon's factory door.
 					*/
 					for (FacingType f = FACING_FIRST; f < FACING_COUNT; f++) {
-						CellClass * cptr = &cellptr->Adjacent_Cell(f);
-						if (cptr->Cell_Building() == NULL) {
+						CellClass * cptr = cellptr->Adjacent_Cell(f);
+						if (cptr && cptr->Cell_Building() == NULL) {
 							cptr->Incoming(coord, true, true);
 						}
 					}
