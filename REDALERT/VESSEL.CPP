@@ -1824,8 +1824,8 @@ int VesselClass::Mission_Unload(void)
 								**	Tell everyone around the transport to scatter.
 								*/
 								for (FacingType face = FACING_N; face < FACING_COUNT; face++) {
-									CellClass * cellptr = &Map[Coord].Adjacent_Cell(face);
-									if (cellptr->Is_Clear_To_Move(SPEED_TRACK, true, true)) {
+									CellClass * cellptr = Map[Coord].Adjacent_Cell(face);
+									if (cellptr && cellptr->Is_Clear_To_Move(SPEED_TRACK, true, true)) {
 										cellptr->Incoming(0, true);
 									}
 								}

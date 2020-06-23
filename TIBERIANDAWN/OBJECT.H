@@ -159,6 +159,7 @@ class ObjectClass : public AbstractClass
 		virtual bool Can_Repair(void) const;
 		virtual bool Can_Demolish(void) const;
 		virtual bool Can_Demolish_Unit(void) const;
+		virtual bool Can_Capture(void) const;
 		virtual bool Can_Player_Fire(void) const;
 		virtual bool Can_Player_Move(void) const;
 

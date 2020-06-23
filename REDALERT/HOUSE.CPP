@@ -1125,6 +1125,7 @@ void HouseClass::AI(void)
 			unit->Mark(MARK_CHANGE);
 		} else {
 			CELL cell = As_Cell(FlagLocation);
+			Map[cell].Flag_Update();
 			Map[cell].Redraw_Objects();
 		}
 	}
@@ -1823,7 +1824,11 @@ void HouseClass::Attacked(BuildingClass* source)
 	if (SpeakAttackDelay == 0 && PlayerPtr->Class->House == Class->House) {
 #endif
 		Speak(VOX_BASE_UNDER_ATTACK, NULL, source ? source->Center_Coord() : 0);
-		SpeakAttackDelay = Options.Normalize_Delay(TICKS_PER_MINUTE * Rule.SpeakDelay);
+
+		// MBL 06.13.2020 - Timing change from 2 minute cooldown, per https://jaas.ea.com/browse/TDRA-6784
+		// SpeakAttackDelay = Options.Normalize_Delay(TICKS_PER_MINUTE * Rule.SpeakDelay); // 2 minutes
+		// SpeakAttackDelay = Options.Normalize_Delay(TICKS_PER_MINUTE/2); // 30 seconds as requested
+		SpeakAttackDelay = Options.Normalize_Delay( (TICKS_PER_MINUTE/2)+(TICKS_PER_SECOND*5) ); // Tweaked for accuracy
 
 		/*
 		**	If there is a trigger event associated with being attacked, process it
@@ -3762,7 +3767,6 @@ void HouseClass::MPlayer_Defeated(void)
 	*/
 	if (PlayerPtr == this) {
 		Session.ObiWan = 1;
-		Debug_Unshroud = true;
 		HidPage.Clear();
 		Map.Flag_To_Redraw(true);
 
@@ -3919,11 +3923,6 @@ void HouseClass::MPlayer_Defeated(void)
 #endif	// MPATH
 
 	}
-
-	/*
-	**	Be sure our messages get displayed, even if we're about to exit.
-	*/
-	Map.Render();
 }
 
 
@@ -4411,10 +4410,14 @@ void HouseClass::Sell_Wall(CELL cell)
 					Map[cell].OverlayData = 0;
 					Map[cell].Owner = HOUSE_NONE;
 					Map[cell].Wall_Update();
-					Map[cell].Adjacent_Cell(FACING_N).Wall_Update();
-					Map[cell].Adjacent_Cell(FACING_W).Wall_Update();
-					Map[cell].Adjacent_Cell(FACING_S).Wall_Update();
-					Map[cell].Adjacent_Cell(FACING_E).Wall_Update();
+					CellClass * ncell = Map[cell].Adjacent_Cell(FACING_N);
+					if (ncell) ncell->Wall_Update();
+					CellClass * wcell = Map[cell].Adjacent_Cell(FACING_W);
+					if (wcell) wcell->Wall_Update();
+					CellClass * scell = Map[cell].Adjacent_Cell(FACING_S);
+					if (scell) scell->Wall_Update();
+					CellClass * ecell = Map[cell].Adjacent_Cell(FACING_E);
+					if (ecell) ecell->Wall_Update();
 					Map[cell].Recalc_Attributes();
 					Map[cell].Redraw_Objects();
 					Map.Radar_Pixel(cell);
@@ -8016,7 +8019,7 @@ void HouseClass::Check_Pertinent_Structures(void)
 		BuildingClass *b = Buildings.Ptr(index);
 
 		if (b && b->IsActive && b->House == this) {
-			if (!b->Class->IsWall) {
+			if (!b->Class->IsWall && *b != STRUCT_APMINE && *b != STRUCT_AVMINE) {
 				if (!b->IsInLimbo && b->Strength > 0) {
 					any_good_buildings = true;
 					break;

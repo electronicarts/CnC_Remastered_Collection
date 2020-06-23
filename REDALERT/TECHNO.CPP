@@ -638,80 +638,6 @@ TechnoClass::TechnoClass(RTTIType rtti, int id, HousesType house) :
 
 
 /***********************************************************************************************
- * TechnoClass::Time_To_Build -- Determines the time it would take to build this.              *
- *                                                                                             *
- *    Use this routine to determine the amount of time it would take to build an object of     *
- *    this type.                                                                               *
- *                                                                                             *
- * INPUT:   none                                                                               *
- *                                                                                             *
- * OUTPUT:  Returns with the time it should take (unmodified by outside factors) to build      *
- *          this object. The time is expressed in game frames.                                 *
- *                                                                                             *
- * WARNINGS:   The time will usually be modified by power status and handicap rating for the   *
- *             owning house. The value returned is merely the raw unmodified time to build.    *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   07/29/1996 JLB : Created.                                                                 *
- *   09/27/1996 JLB : Takes into account the power availability.                               *
- *=============================================================================================*/
-//#define UNIT_BUILD_BIAS fixed(5,4)
-//#define UNIT_BUILD_BIAS fixed(6,4)
-#define UNIT_BUILD_BIAS fixed(1,1)
-//#define UNIT_BUILD_BIAS fixed(5,1)
-
-extern int UnitBuildPenalty;
-
-int TechnoClass::Time_To_Build(void) const
-{
-	int val = Class_Of().Time_To_Build();
-
-#ifdef FIXIT_VERSION_3
-	if (Session.Type == GAME_NORMAL ) {
-#else
-	if (Session.Type == GAME_NORMAL ||
-					PlayingAgainstVersion == VERSION_RED_ALERT_104 ||
-		 			PlayingAgainstVersion == VERSION_RED_ALERT_107){
-#endif
-		val *= House->BuildSpeedBias;
-	}else{
-		if (What_Am_I() == RTTI_BUILDING || What_Am_I() == RTTI_INFANTRY) {
-			val *= House->BuildSpeedBias;
-		} else {
-			val *= House->BuildSpeedBias * fixed (UnitBuildPenalty, 100);	//UNIT_BUILD_BIAS;
-		}
-	}
-
-
-	/*
-	**	Adjust the time to build based on the power output of the owning house.
-	*/
-	fixed power = House->Power_Fraction();
-	if (power > 1) power = 1;
-	if (power < 1 && power > fixed::_3_4) power = fixed::_3_4;
-	if (power < fixed::_1_2) power = fixed::_1_2;
-	power.Inverse();
-	val *= power;
-
-	int divisor = House->Factory_Count(What_Am_I());
-	if (divisor != 0) {
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-// Hack: allow the multiple-factory bonus, but only up to two factories if
-//			this is an AM<->AM game.
-		if(NewUnitsEnabled) {
-			val /= min(divisor,2);
-		} else {
-			val /= divisor;
-		}
-#else
-		val /= divisor;
-#endif
-	}
-	return(val);
-}
-
-
-/***********************************************************************************************
  * TechnoClass::Is_Visible_On_Radar -- Is this object visible on player's radar screen?        *
  *                                                                                             *
  *    Use this routine to determine if this object should be visible on the player's radar     *
@@ -3458,8 +3384,9 @@ void TechnoClass::Player_Assign_Mission(MissionType mission, TARGET target, TARG
 		if (Is_Foot()) {
 			const FootClass* foot = (const FootClass*)this;
 			if (foot->Group < MAX_TEAMS) {
-				speed = TeamSpeed[foot->Group];
-				maxspeed = TeamMaxSpeed[foot->Group];
+				TeamFormDataStruct& team_form_data = TeamFormData[foot->Owner()];
+				speed = team_form_data.TeamSpeed[foot->Group];
+				maxspeed = team_form_data.TeamMaxSpeed[foot->Group];
 			}
 		}
 		Queue_Mission(TargetClass(this), mission, target, destination, speed, maxspeed);
@@ -6494,9 +6421,82 @@ int TechnoTypeClass::Get_Ownable(void) const
  * HISTORY:                                                                                    *
  *   07/29/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-int TechnoTypeClass::Time_To_Build(void) const
+ //#define UNIT_BUILD_BIAS fixed(5,4)
+ //#define UNIT_BUILD_BIAS fixed(6,4)
+#define UNIT_BUILD_BIAS fixed(1,1)
+//#define UNIT_BUILD_BIAS fixed(5,1)
+
+extern int UnitBuildPenalty;
+
+int TechnoTypeClass::Time_To_Build(HousesType house) const
 {
-	return(Cost * Rule.BuildSpeedBias * fixed(TICKS_PER_MINUTE, 1000));
+	int time = Cost * Rule.BuildSpeedBias * fixed(TICKS_PER_MINUTE, 1000);
+
+	HouseClass* hptr = HouseClass::As_Pointer(house);
+	if (!hptr || !hptr->IsActive) {
+		return time;
+	}
+
+#ifdef FIXIT_VERSION_3
+	if (Session.Type == GAME_NORMAL) {
+#else
+	if (Session.Type == GAME_NORMAL ||
+		PlayingAgainstVersion == VERSION_RED_ALERT_104 ||
+		PlayingAgainstVersion == VERSION_RED_ALERT_107) {
+#endif
+		time *= hptr->BuildSpeedBias;
+	}
+	else {
+		if (What_Am_I() == RTTI_BUILDINGTYPE || What_Am_I() == RTTI_INFANTRYTYPE) {
+			time *= hptr->BuildSpeedBias;
+		}
+		else {
+			time *= hptr->BuildSpeedBias * fixed(UnitBuildPenalty, 100);	//UNIT_BUILD_BIAS;
+		}
+	}
+
+	/*
+	**	Adjust time according to IQ setting of computer controlled house. The
+	**	build time will range from double normal time at the slowest to
+	**	just normal time at the fastest.
+	*/
+	if (!hptr->IsHuman && Rule.Diff[hptr->Difficulty].IsBuildSlowdown) {
+		time = time * Inverse(fixed(hptr->IQ + Rule.MaxIQ, Rule.MaxIQ * 2));
+	}
+
+	/*
+	**	Adjust the time to build based on the power output of the owning house.
+	*/
+	fixed power = hptr->Power_Fraction();
+	fixed scale(1);
+	if (power == 0) {
+		scale = fixed(4, 1);
+	}
+	else if (power < fixed::_1_2) {
+		scale = fixed(5, 2);
+	}
+	else if (power < 1) {
+		scale = fixed(3, 2);
+	}
+	time *= scale;
+
+	int divisor = hptr->Factory_Count(What_Am_I());
+	if (divisor != 0) {
+#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
+		// Hack: allow the multiple-factory bonus, but only up to two factories if
+		//			this is an AM<->AM game.
+		if (NewUnitsEnabled) {
+			time /= min(divisor, 2);
+		}
+		else {
+			time /= divisor;
+		}
+#else
+		time /= divisor;
+#endif
+	}
+
+	return(time);
 }
 
 

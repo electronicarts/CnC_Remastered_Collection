@@ -471,9 +471,9 @@ void BulletClass::AI(void)
 					// Fix for Nuke or Atom Bomb killing structures and units during animation sequence and not getting kills tracked
 					// Per https://jaas.ea.com/browse/TDRA-6610
 					//
-					if (newanim && Class->Explosion == ANIM_ATOM_BLAST && newanim->Owner == HOUSE_NONE) {
+					if (newanim && Class->Explosion == ANIM_ATOM_BLAST && newanim->OwnerHouse == HOUSE_NONE) {
 						if (Payback && Payback->House && Payback->House->Class) {
-							newanim->Owner = Payback->House->Class->House;
+							newanim->OwnerHouse = Payback->House->Class->House;
 						}
 					}
 				}

@@ -130,8 +130,7 @@ template<> FixedIHeapClass * CCPtr<SmudgeTypeClass>::Heap = &SmudgeTypes;
 #endif
 
 /* These variables are used to keep track of the slowest speed of a team */
-MPHType TeamMaxSpeed[MAX_TEAMS];
-SpeedType TeamSpeed[MAX_TEAMS];
+TeamFormDataStruct TeamFormData[HOUSE_COUNT];
 bool FormMove;
 SpeedType FormSpeed;
 MPHType FormMaxSpeed;

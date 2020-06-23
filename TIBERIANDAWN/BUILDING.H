@@ -185,6 +185,7 @@ class BuildingClass : public TechnoClass
 		virtual ActionType What_Action(CELL cell) const;
 		virtual bool Can_Demolish(void) const;
 		virtual bool Can_Demolish_Unit(void) const;
+		virtual bool Can_Capture(void) const;
 		virtual ObjectTypeClass const & Class_Of(void) const {return *Class;};
 		virtual int Refund_Amount(void) const;
 		virtual DirType Fire_Direction(void) const;

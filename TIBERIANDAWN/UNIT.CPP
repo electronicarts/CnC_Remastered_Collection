@@ -584,6 +584,13 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 	switch (message) {
 
 		/*
+		**	Checks to see if this object is in need of service depot processing.
+		*/
+		case RADIO_NEED_REPAIR:
+			if (!IsDriving && !Target_Legal(NavCom) && Health_Ratio() >= 0x100) return(RADIO_NEGATIVE);
+			break;
+
+		/*
 		**	Asks if the passenger can load on this transport.
 		*/
 		case RADIO_CAN_LOAD:
@@ -623,6 +630,38 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 		**	to the impatient unit.
 		*/
 		case RADIO_DOCKING:
+
+			/*
+			**	Check for the case of a docking message arriving from a unit that does not
+			**	have formal radio contact established. This might be a unit that is standing
+			**	by. If this transport is free to proceed with normal docking operation, then
+			**	establish formal contact now. If the transport is completely full, then break
+			**	off contact. In all other cases, just tell the pending unit to stand by.
+			*/
+			if (Contact_With_Whom() != from) {
+
+				/*
+				**	Can't ever load up so tell the passenger to bug off.
+				*/
+				if (How_Many() >= Class->Max_Passengers()) {
+					return(RADIO_NEGATIVE);
+				}
+
+				/*
+				**	Establish contact and let the loading process proceed normally.
+				*/
+				if (!In_Radio_Contact()) {
+					Transmit_Message(RADIO_HELLO, from);
+				} else {
+
+					/*
+					**	This causes the potential passenger to think that all is ok and to
+					**	hold on for a bit.
+					*/
+					return(RADIO_ROGER);
+				}
+			}
+
 			if (Class->IsTransporter && *this == UNIT_APC && How_Many() < Class->Max_Passengers()) {
 				TarComClass::Receive_Message(from, message, param);
 
@@ -1215,6 +1254,16 @@ void UnitClass::Active_Click_With(ActionType action, ObjectClass * object)
 void UnitClass::Active_Click_With(ActionType action, CELL cell) {TarComClass::Active_Click_With(action, cell);};
 
 
+void UnitClass::Player_Assign_Mission(MissionType mission, TARGET target, TARGET destination)
+{
+	Validate();
+	if (mission == MISSION_HARVEST) {
+		ArchiveTarget = TARGET_NONE;
+	}
+	TarComClass::Player_Assign_Mission(mission, target, destination);
+}
+
+
 /***********************************************************************************************
  * UnitClass::Enter_Idle_Mode -- Unit enters idle mode state.                                  *
  *                                                                                             *
@@ -1744,7 +1793,7 @@ void UnitClass::Per_Cell_Process(bool center)
 						return;
 
 					default:
-						Scatter(true);
+						Scatter(0, true);
 						break;
 				}
 			}
@@ -1755,28 +1804,39 @@ void UnitClass::Per_Cell_Process(bool center)
 	**	When breaking away from a transport object or building, possibly
 	**	scatter or otherwise begin normal unit operations.
 	*/
-	if (IsTethered && center && Mission != MISSION_ENTER && (*this != UNIT_APC || IsDriving || !Target_Legal(TarCom))) {
-		TechnoClass * contact = Contact_With_Whom();
-		if (Transmit_Message(RADIO_UNLOADED) == RADIO_RUN_AWAY) {
-			if (*this == UNIT_HARVESTER && contact && contact->What_Am_I() == RTTI_BUILDING) {
-				Assign_Mission(MISSION_HARVEST);
-			} else if (!Target_Legal(NavCom)) {
-				Scatter(0, true);
-			}
+	if (IsTethered && center &&
+		(Mission != MISSION_ENTER || (As_Techno(NavCom) != NULL && Contact_With_Whom() != As_Techno(NavCom))) &&
+		Mission != MISSION_UNLOAD) {
+		/*
+		**	Special hack check to make sure that even though it has moved one
+		**	cell, if it is still on the building (e.g., service depot), have
+		**	it scatter again.
+		*/
+		if (Map[cell].Cell_Building() != NULL && !Target_Legal(NavCom)) {
+			Scatter(0, true, true);
 		} else {
-			if (*this == UNIT_HARVESTER) {
-				if (Target_Legal(ArchiveTarget)) {
+			TechnoClass * contact = Contact_With_Whom();
+			if (Transmit_Message(RADIO_UNLOADED) == RADIO_RUN_AWAY) {
+				if (*this == UNIT_HARVESTER && contact && contact->What_Am_I() == RTTI_BUILDING) {
 					Assign_Mission(MISSION_HARVEST);
-					Assign_Destination(ArchiveTarget);
-					ArchiveTarget = TARGET_NONE;
-				} else {
+				} else if (!Target_Legal(NavCom)) {
+					Scatter(0, true);
+				}
+			} else {
+				if (*this == UNIT_HARVESTER) {
+					if (Target_Legal(ArchiveTarget)) {
+						Assign_Mission(MISSION_HARVEST);
+						Assign_Destination(ArchiveTarget);
+						ArchiveTarget = TARGET_NONE;
+					} else {
 
-					/*
-					**	Since there is no place to go, move away to clear
-					**	the pad for another harvester.
-					*/
-					if (!Target_Legal(NavCom)) {
-						Scatter(0, true);
+						/*
+						**	Since there is no place to go, move away to clear
+						**	the pad for another harvester.
+						*/
+						if (!Target_Legal(NavCom)) {
+							Scatter(0, true);
+						}
 					}
 				}
 			}
@@ -2204,7 +2264,10 @@ void UnitClass::Draw_It(int x, int y, WindowNumberType window)
 	**	If this unit is carrying the flag, then draw that on top of everything else.
 	*/
 	if (Flagged != HOUSE_NONE) {
-		CC_Draw_Shape(this, "FLAGFLY", MixFileClass::Retrieve("FLAGFLY.SHP"), Frame % 14, x, y, window, SHAPE_CENTER|SHAPE_FADING|SHAPE_GHOST, HouseClass::As_Pointer(Flagged)->Remap_Table(false, false), Map.UnitShadow, Flagged);
+		shapefile = MixFileClass::Retrieve("FLAGFLY.SHP");
+		int flag_x = x + (ICON_PIXEL_W / 2) - 2;
+		int flag_y = y + (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile);
+		CC_Draw_Shape(this, "FLAGFLY", shapefile, Frame % 14, flag_x, flag_y, window, SHAPE_CENTER|SHAPE_FADING|SHAPE_GHOST, HouseClass::As_Pointer(Flagged)->Remap_Table(false, false), Map.UnitShadow, Flagged);
 	}
 
 	TarComClass::Draw_It(x, y, window);
@@ -2221,34 +2284,34 @@ void UnitClass::Draw_It(int x, int y, WindowNumberType window)
  *                                                                                             *
  * INPUT:   none                                                                               *
  *                                                                                             *
- * OUTPUT:  bool; Is it located directly over a Tiberium patch?                                *
+ * OUTPUT:  int; Amount of Tiberium at this location.                                          *
  *                                                                                             *
  * WARNINGS:   none                                                                            *
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   07/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-bool UnitClass::Tiberium_Check(CELL &center, int x, int y)
+int UnitClass::Tiberium_Check(CELL &center, int x, int y)
 {
 	Validate();
 	/*
 	**	If the specified offset from the origin will cause it
 	**	to spill past the map edge, then abort this cell check.
 	*/
-	if (Cell_X(center)+x < Map.MapCellX) return(false);
-	if (Cell_X(center)+x >= Map.MapCellX+Map.MapCellWidth) return(false);
-	if (Cell_Y(center)+y < Map.MapCellY) return(false);
-	if (Cell_Y(center)+y >= Map.MapCellY+Map.MapCellHeight) return(false);
+	if (Cell_X(center)+x < Map.MapCellX) return(0);
+	if (Cell_X(center)+x >= Map.MapCellX+Map.MapCellWidth) return(0);
+	if (Cell_Y(center)+y < Map.MapCellY) return(0);
+	if (Cell_Y(center)+y >= Map.MapCellY+Map.MapCellHeight) return(0);
 
 	center = XY_Cell(Cell_X(center)+x, Cell_Y(center)+y);
 
 	//using function for IsVisible so we have different results for different players - JAS 2019/09/30
 	if ((GameToPlay != GAME_NORMAL || (!IsOwnedByPlayer || Map[center].Is_Visible(PlayerPtr)))) {
 		if (!Map[center].Cell_Techno() && Map[center].Land_Type() == LAND_TIBERIUM) {
-			return(true);
+			return(Map[center].OverlayData);
 		}
 	}
-	return(false);
+	return(0);
 }
 
 
@@ -2265,31 +2328,41 @@ bool UnitClass::Goto_Tiberium(void)
 			**	Perform a ring search outward from the center.
 			*/
 			for (int radius = 1; radius < 64; radius++) {
+				CELL cell = center;
+				CELL bestcell = 0;
+				int tiberium = 0;
+				int besttiberium = 0;
 				for (int x = -radius; x <= radius; x++) {
-					CELL cell = center;
-					if (Tiberium_Check(cell, x, -radius)) {
-						Assign_Destination(::As_Target(cell));
-						return(false);
+					tiberium = Tiberium_Check(cell, x, -radius);
+					if (tiberium > besttiberium) {
+						bestcell = cell;
+						besttiberium = tiberium;
 					}
 
 					cell = center;
-					if (Tiberium_Check(cell, x, +radius)) {
-						Assign_Destination(::As_Target(cell));
-						return(false);
+					tiberium = Tiberium_Check(cell, x, +radius);
+					if (tiberium > besttiberium) {
+						bestcell = cell;
+						besttiberium = tiberium;
 					}
 
 					cell = center;
-					if (Tiberium_Check(cell, -radius, x)) {
-						Assign_Destination(::As_Target(cell));
-						return(false);
+					tiberium = Tiberium_Check(cell, -radius, x);
+					if (tiberium > besttiberium) {
+						bestcell = cell;
+						besttiberium = tiberium;
 					}
-
 
 					cell = center;
-					if (Tiberium_Check(cell, +radius, x)) {
-						Assign_Destination(::As_Target(cell));
-						return(false);
+					tiberium = Tiberium_Check(cell, +radius, x);
+					if (tiberium > besttiberium) {
+						bestcell = cell;
+						besttiberium = tiberium;
 					}
+				}
+				if (bestcell) {
+					Assign_Destination(::As_Target(bestcell));
+					return(false);
 				}
 			}
 		}
@@ -2589,6 +2662,7 @@ int UnitClass::Mission_Harvest(void)
 				Set_Rate(2);
 				Set_Stage(0);
 				Status = HARVESTING;
+				ArchiveTarget = ::As_Target(Coord_Cell(Coord));
 				return(1);
 			} else {
 
@@ -2623,7 +2697,6 @@ int UnitClass::Mission_Harvest(void)
 				IsHarvesting = false;
 				if (Tiberium_Load() == 0x0100) {
 					Status = FINDHOME;
-				  	ArchiveTarget = ::As_Target(Coord_Cell(Coord));
 				} else {
 					if (!Goto_Tiberium() && !Target_Legal(NavCom))	{
 					  	ArchiveTarget = TARGET_NONE;
@@ -2634,6 +2707,8 @@ int UnitClass::Mission_Harvest(void)
 					}
 				}
 				return(1);
+			} else if (!Target_Legal(NavCom) && ArchiveTarget == TARGET_NONE) {
+				ArchiveTarget = ::As_Target(Coord_Cell(Coord));
 			}
 			break;
 
@@ -2823,7 +2898,7 @@ short const * UnitClass::Overlap_List(void) const
 	if (Is_Selected_By_Player() || IsFiring) {
 		size += 24;
 	}
-	if (Is_Selected_By_Player() || Class->IsGigundo || IsAnimAttached) {
+	if (Is_Selected_By_Player() || Class->IsGigundo || IsAnimAttached || Flagged != HOUSE_NONE) {
 		size = ICON_PIXEL_W*2;
 	}
 	return(Coord_Spillage_List(Coord, size)+1);
@@ -3245,7 +3320,11 @@ void UnitClass::Scatter(COORDINATE threat, bool forced, bool nokidding)
 {
 	Validate();
 	if (*this != UNIT_GUNBOAT && *this != UNIT_HOVER) {
-		if (!PrimaryFacing.Is_Rotating() && ((!Target_Legal(TarCom) && !Target_Legal(NavCom)) || forced || nokidding || Random_Pick(1, 4) == 1)) {
+		if (PrimaryFacing.Is_Rotating()) return;
+		if (Target_Legal(NavCom) && !nokidding) return;
+		if (threat == 0) {
+			Assign_Destination(::As_Target(Map.Nearby_Location(Coord_Cell(Coord))));
+		} else if (((!Target_Legal(TarCom) && !Target_Legal(NavCom)) || forced || nokidding || Random_Pick(1, 4) == 1)) {
 			FacingType	toface;
 			FacingType	newface;
 			CELL			newcell;
@@ -3375,7 +3454,13 @@ bool UnitClass::Limbo(void)
 	if (!IsInLimbo) {
 		Stop_Driver();
 	}
-	return(TarComClass::Limbo());
+	if (TarComClass::Limbo()) {
+		if (Flagged != HOUSE_NONE) {
+			HouseClass::As_Pointer(Flagged)->Flag_Attach(Coord_Cell(Coord));
+		}
+		return(true);
+	}
+	return(false);
 }
 
 
@@ -3543,16 +3628,14 @@ ActionType UnitClass::What_Action(ObjectClass * object) const
 	/*
 	**	Special return to friendly refinery action.
 	*/
-	if (IsOwnedByPlayer && object->Is_Techno() && ((TechnoClass const *)object)->House->Is_Ally(this)) {
-		if (object->What_Am_I() == RTTI_BUILDING && ((UnitClass *)this)->Transmit_Message(RADIO_CAN_LOAD, (TechnoClass*)object) == RADIO_ROGER) {
-			action = ACTION_ENTER;
-		}
+	if (Is_Owned_By_Player() && House->Class->House == object->Owner() && object->What_Am_I() == RTTI_BUILDING && ((UnitClass *)this)->Transmit_Message(RADIO_CAN_LOAD, (TechnoClass*)object) == RADIO_ROGER) {
+		action = ACTION_ENTER;
 	}
 
 	/*
 	**	Special return to friendly repair factory action.
 	*/
-	if (IsOwnedByPlayer && action == ACTION_SELECT && object->What_Am_I() == RTTI_BUILDING) {
+	if (Is_Owned_By_Player() && House->Class->House == object->Owner() && action == ACTION_SELECT && object->What_Am_I() == RTTI_BUILDING) {
 		BuildingClass * building = (BuildingClass *)object;
 		if (building->Class->Type == STRUCT_REPAIR && !building->In_Radio_Contact() && !building->Is_Something_Attached()) {
 			action = ACTION_MOVE;

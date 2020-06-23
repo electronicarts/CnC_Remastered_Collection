@@ -142,6 +142,8 @@ void CellClass::Code_Pointers(void)
 			Overlapper[index] = NULL;
 		}
 	}
+
+	assert(CTFFlag == NULL);
 }
 
 
@@ -177,6 +179,8 @@ void CellClass::Decode_Pointers(void)
 			assert(Overlapper[index] != NULL);
 		}
 	}
+
+	CTFFlag = NULL;
 }
 
 
@@ -480,8 +484,14 @@ void DisplayClass::Decode_Pointers(void)
  *=============================================================================================*/
 void MapClass::Code_Pointers(void)
 {
+	CELL cell;
+
+	for (cell = 0; cell < MAP_CELL_TOTAL; cell++) {
+		(*this)[cell].Flag_Destroy();
+	}
+
 	CellClass * cellptr = &(*this)[(CELL)0];
-	for (CELL cell = 0; cell < MAP_CELL_TOTAL; cell++) {
+	for (cell = 0; cell < MAP_CELL_TOTAL; cell++) {
 		cellptr->Code_Pointers();
 		cellptr++;
 	}

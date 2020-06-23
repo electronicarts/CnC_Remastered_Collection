@@ -329,7 +329,8 @@ static TechnoClass * _Who_Can_Pop_Out_Of(CELL origin)
 	for (int f = -1; f < 8; f++) {
 		CellClass * ptr = cellptr;
 		if (f != -1) {
-			ptr = &ptr->Adjacent_Cell(FacingType(f));
+			ptr = ptr->Adjacent_Cell(FacingType(f));
+			if (!ptr) continue;
 		}
 
 		BuildingClass * building = ptr->Cell_Building();

@@ -255,8 +255,7 @@ extern DynamicVectorClass<TriggerClass *> 				HouseTriggers[HOUSE_COUNT];
 extern BaseClass													Base;
 
 /* These variables are used to keep track of the slowest speed of a team */
-extern MPHType TeamMaxSpeed[MAX_TEAMS];
-extern SpeedType TeamSpeed[MAX_TEAMS];
+extern TeamFormDataStruct TeamFormData[HOUSE_COUNT];
 extern bool FormMove;
 extern SpeedType FormSpeed;
 extern MPHType FormMaxSpeed;

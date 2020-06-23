@@ -2270,7 +2270,7 @@ int ObjectTypeClass::Cost_Of(void) const
  * HISTORY:                                                                                    *
  *   07/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-int ObjectTypeClass::Time_To_Build(void) const
+int ObjectTypeClass::Time_To_Build(HousesType ) const
 {
 	return(0);
 }

@@ -211,7 +211,7 @@ TechnoClass * CellClass::Cell_Techno(int x, int y) const
 
 	if (Cell_Occupier()) {
 		object = Cell_Occupier();
-		while (object) {
+		while (object && object->IsActive) {
 			if (object->Is_Techno()) {
 				COORDINATE		coord;		// Coordinate relative to cell corner.
 				long		dist;
@@ -248,7 +248,7 @@ ObjectClass * CellClass::Cell_Find_Object(RTTIType rtti) const
 	Validate();
 	ObjectClass * object = Cell_Occupier();
 
-	while (object) {
+	while (object && object->IsActive) {
 		if (object->What_Am_I() == rtti) {
 			return(object);
 		}
@@ -1132,14 +1132,6 @@ void CellClass::Draw_It(int x, int y, int draw_type) const
 				}
 	#endif
 			}
-
-			/*
-			**	Draw the flag if there is one located at this cell.
-			*/
-			if (IsFlagged) {
-				void const * remap = HouseClass::As_Pointer(Owner)->Remap_Table(false, false);
-				CC_Draw_Shape(MixFileClass::Retrieve("FLAGFLY.SHP"), Frame % 14, x+(ICON_PIXEL_W/2), y+(ICON_PIXEL_H/2), WINDOW_TACTICAL, SHAPE_CENTER|SHAPE_GHOST|SHAPE_FADING, remap, Map.UnitShadow);
-			}
 		}
 	}
 }
@@ -1202,13 +1194,13 @@ void CellClass::Concrete_Calc(void)
 	*/
 	index = 0;
 	for (int i = 0; i < (sizeof(_even)/sizeof(_even[0])); i++) {
-		CellClass & cellptr = Adjacent_Cell(*ptr++);
+		CellClass * cellptr = Adjacent_Cell(*ptr++);
 
 //		if ((cellptr->IsConcrete) ||
 //					cellptr->Concrete == C_UPDOWN_RIGHT ||
 //					cellptr->Concrete == C_UPDOWN_LEFT) {
 
-		if (cellptr.Overlay == OVERLAY_CONCRETE) {
+		if (cellptr && cellptr->Overlay == OVERLAY_CONCRETE) {
 			index |= (1<<i);
 		}
 	}
@@ -1399,9 +1391,9 @@ void CellClass::Wall_Update(void)
 	}
 
 	for (unsigned index = 0; index < (sizeof(_offsets)/sizeof(_offsets[0])); index++) {
-		CellClass & newcell = Adjacent_Cell(_offsets[index]);
+		CellClass * newcell = Adjacent_Cell(_offsets[index]);
 
-		if (newcell.Overlay != OVERLAY_NONE && OverlayTypeClass::As_Reference(newcell.Overlay).IsWall) {
+		if (newcell && newcell->Overlay != OVERLAY_NONE && OverlayTypeClass::As_Reference(newcell->Overlay).IsWall) {
 			int	icon = 0;
 
 			/*
@@ -1409,41 +1401,42 @@ void CellClass::Wall_Update(void)
 			**	cells.
 			*/
 			for (unsigned i = 0; i < 4; i++) {
-				if (newcell.Adjacent_Cell(_offsets[i]).Overlay == newcell.Overlay) {
+				CellClass * adjcell = newcell->Adjacent_Cell(_offsets[i]);
+				if (adjcell && adjcell->Overlay == newcell->Overlay) {
 					icon |= 1 << i;
 				}
 			}
-			newcell.OverlayData = (newcell.OverlayData & 0xFFF0) | icon;
-//			newcell.OverlayData = icon;
+			newcell->OverlayData = (newcell->OverlayData & 0xFFF0) | icon;
+//			newcell->OverlayData = icon;
 
 			/*
 			**	Handle special cases for the incomplete damaged wall sets. If a damage stage
 			**	is calculated, but there is no artwork for it, then consider the wall to be
 			**	completely destroyed.
 			*/
-			if (newcell.Overlay == OVERLAY_BRICK_WALL && newcell.OverlayData == 48) {
-				newcell.Overlay = OVERLAY_NONE;
-				newcell.OverlayData = 0;
-				ObjectClass::Detach_This_From_All(::As_Target(newcell.Cell_Number()), true);
+			if (newcell->Overlay == OVERLAY_BRICK_WALL && newcell->OverlayData == 48) {
+				newcell->Overlay = OVERLAY_NONE;
+				newcell->OverlayData = 0;
+				ObjectClass::Detach_This_From_All(::As_Target(newcell->Cell_Number()), true);
 			}
-			if (newcell.Overlay == OVERLAY_SANDBAG_WALL && newcell.OverlayData == 16) {
-				newcell.Overlay = OVERLAY_NONE;
-				newcell.OverlayData = 0;
-				ObjectClass::Detach_This_From_All(::As_Target(newcell.Cell_Number()), true);
+			if (newcell->Overlay == OVERLAY_SANDBAG_WALL && newcell->OverlayData == 16) {
+				newcell->Overlay = OVERLAY_NONE;
+				newcell->OverlayData = 0;
+				ObjectClass::Detach_This_From_All(::As_Target(newcell->Cell_Number()), true);
 			}
-			if (newcell.Overlay == OVERLAY_CYCLONE_WALL && newcell.OverlayData == 32) {
-				newcell.Overlay = OVERLAY_NONE;
-				newcell.OverlayData = 0;
-				ObjectClass::Detach_This_From_All(::As_Target(newcell.Cell_Number()), true);
+			if (newcell->Overlay == OVERLAY_CYCLONE_WALL && newcell->OverlayData == 32) {
+				newcell->Overlay = OVERLAY_NONE;
+				newcell->OverlayData = 0;
+				ObjectClass::Detach_This_From_All(::As_Target(newcell->Cell_Number()), true);
 			}
-			if (newcell.Overlay == OVERLAY_BARBWIRE_WALL && newcell.OverlayData == 16) {
-				newcell.Overlay = OVERLAY_NONE;
-				newcell.OverlayData = 0;
-				ObjectClass::Detach_This_From_All(::As_Target(newcell.Cell_Number()), true);
+			if (newcell->Overlay == OVERLAY_BARBWIRE_WALL && newcell->OverlayData == 16) {
+				newcell->Overlay = OVERLAY_NONE;
+				newcell->OverlayData = 0;
+				ObjectClass::Detach_This_From_All(::As_Target(newcell->Cell_Number()), true);
 			}
 
-			newcell.Recalc_Attributes();
-			newcell.Redraw_Objects();
+			newcell->Recalc_Attributes();
+			newcell->Redraw_Objects();
 		}
 	}
 }
@@ -1550,10 +1543,14 @@ int CellClass::Reduce_Wall(int damage)
 					OverlayData = 0;
 					Recalc_Attributes();
 					Redraw_Objects();
-					Adjacent_Cell(FACING_N).Wall_Update();
-					Adjacent_Cell(FACING_W).Wall_Update();
-					Adjacent_Cell(FACING_S).Wall_Update();
-					Adjacent_Cell(FACING_E).Wall_Update();
+					CellClass * ncell = Adjacent_Cell(FACING_N);
+					if (ncell) ncell->Wall_Update();
+					CellClass * wcell = Adjacent_Cell(FACING_W);
+					if (wcell) wcell->Wall_Update();
+					CellClass * scell = Adjacent_Cell(FACING_S);
+					if (scell) scell->Wall_Update();
+					CellClass * ecell = Adjacent_Cell(FACING_E);
+					if (ecell) ecell->Wall_Update();
 					return(true);
 				}
 			}
@@ -1813,28 +1810,23 @@ void CellClass::Incoming(COORDINATE threat, bool forced, bool nokidding)
  * HISTORY:                                                                                    *
  *   03/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-CellClass const & CellClass::Adjacent_Cell(FacingType face) const
+CellClass const * CellClass::Adjacent_Cell(FacingType face) const
 {
 	Validate();
+	if (face == FACING_NONE) {
+		return(this);
+	}
+
 	if ((unsigned)face >= FACING_COUNT) {
-		return(*this);
+		return(NULL);
 	}
 
-	CELL id = Cell_Number();
-	//The top row doesn't have any adjacent cells to the north. - LLL
-	if (id < MAP_CELL_W && (face == FACING_N || face == FACING_NE || face == FACING_NW)) {
-		return (*this);
+	CELL newcell = ::Adjacent_Cell(Cell_Number(), face);
+	if ((unsigned)newcell >= MAP_CELL_TOTAL) {
+		return(NULL);
 	}
 
-	//The bottom row doesn't have any adjacent cells to the south. - LLL
-	if ((id > MAP_CELL_TOTAL - MAP_CELL_W) && (face == FACING_S || face == FACING_SE || face == FACING_SW)) {
-		return (*this);
-	}
-
-	CellClass const * ptr = this + AdjacentCell[face];
-	if (ptr->Cell_Number() & 0xF000) return(*this);
-	return(*ptr);
-//	return(*(this + AdjacentCell[face]));
+	return &Map[newcell];
 }
 
 
@@ -1911,10 +1903,10 @@ long CellClass::Tiberium_Adjust(bool pregame)
 				CELL cell = Cell_Number() + AdjacentCell[face];
 				if ((unsigned)cell >= MAP_CELL_TOTAL) continue;
 
-				CellClass & adj = Adjacent_Cell(face);
+				CellClass * adj = Adjacent_Cell(face);
 
-				if (adj.Overlay != OVERLAY_NONE &&
-					OverlayTypeClass::As_Reference(adj.Overlay).Land == LAND_TIBERIUM) {
+				if (adj && adj->Overlay != OVERLAY_NONE &&
+					OverlayTypeClass::As_Reference(adj->Overlay).Land == LAND_TIBERIUM) {
 					count++;
 				}
 			}
@@ -2386,6 +2378,7 @@ bool CellClass::Flag_Place(HousesType house)
 	if (!IsFlagged && Is_Generally_Clear()) {
 		IsFlagged = true;
 		Owner = house;
+		Flag_Update();
 		Redraw_Objects();
 		return(true);
 	}
@@ -2413,10 +2406,39 @@ bool CellClass::Flag_Remove(void)
 	if (IsFlagged) {
 		IsFlagged = false;
 		Owner = HOUSE_NONE;
+		Flag_Update();
 		Redraw_Objects();
 		return(true);
 	}
 	return(false);
+}
+
+
+void CellClass::Flag_Update(void)
+{
+	if (IsFlagged && !CTFFlag) {
+		Flag_Create();
+	} else if (!IsFlagged && CTFFlag) {
+		Flag_Destroy();
+	}
+}
+
+
+void CellClass::Flag_Create(void)
+{
+	if (!CTFFlag) {
+		CTFFlag = new AnimClass(ANIM_FLAG, Cell_Coord(), 0, 1, true);
+		if (CTFFlag) {
+			CTFFlag->OwnerHouse = Owner;
+		}
+	}
+}
+
+
+void CellClass::Flag_Destroy(void)
+{
+	delete CTFFlag;
+	CTFFlag = NULL;
 }
 
 
