@@ -3140,15 +3140,13 @@ void Handle_Team(int team, int action)
 			**	If a non team member is currently selected, then deselect all objects
 			**	before selecting this team.
 			*/
-			if (CurrentObject.Count()) {
-				switch (CurrentObject[0]->What_Am_I()) {
-					case RTTI_UNIT:
-					case RTTI_INFANTRY:
-					case RTTI_AIRCRAFT:
-						if (((FootClass *)CurrentObject[0])->Group != team) {
-							Unselect_All();
-						}
+			for (index = 0; index < CurrentObject.Count(); index++) {
+				ObjectClass * obj = CurrentObject[index];
+				if (obj->What_Am_I() == RTTI_UNIT || obj->What_Am_I() == RTTI_INFANTRY || obj->What_Am_I() == RTTI_AIRCRAFT) {
+					if (((FootClass *)obj)->Group != team) {
+						Unselect_All();
 						break;
+					}
 				}
 			}
 			for (index = 0; index < Units.Count(); index++) {

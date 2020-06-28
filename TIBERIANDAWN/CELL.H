@@ -194,8 +194,8 @@ class CellClass
 		bool  Is_Generally_Clear(bool ignore_cloaked = false) const;
 		TARGET  As_Target(void) const {return ::As_Target(Cell_Number());};
 		BuildingClass *  Cell_Building(void) const;
-		CellClass const &  Adjacent_Cell(FacingType face) const;
-		CellClass &  Adjacent_Cell(FacingType face) {return (CellClass &)((*((CellClass const *)this)).Adjacent_Cell(face));};
+		CellClass const *  Adjacent_Cell(FacingType face) const;
+		CellClass *  Adjacent_Cell(FacingType face) {return (CellClass *)((*((CellClass const *)this)).Adjacent_Cell(face));};
 		COORDINATE  Cell_Coord(void) const;
 		int  Cell_Color(bool override=false) const;
 		CELL  Cell_Number(void) const;
@@ -221,6 +221,9 @@ class CellClass
 		void  Overlap_Up(ObjectClass * object);
 		bool  Flag_Place(HousesType house);
 		bool  Flag_Remove(void);
+		void  Flag_Update(void);
+		void  Flag_Create(void);
+		void  Flag_Destroy(void);
 
 		/*
 		**	File I/O.
@@ -287,9 +290,14 @@ class CellClass
 		LandType OverrideLand;	// The overriden land type of this cell.
 
 		/*
+		**	Points to the flag animation on this cell in CTF games.
+		*/
+		AnimClass* CTFFlag;
+
+		/*
 		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
 		*/
-		unsigned char SaveLoadPadding[32];
+		unsigned char SaveLoadPadding[28];
 };
 
 #endif

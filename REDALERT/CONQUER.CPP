@@ -3921,6 +3921,8 @@ void Handle_Team(int team, int action)
 		TeamEvent = (char)action + 1;
 	}
 
+	TeamFormDataStruct& team_form_data = TeamFormData[PlayerPtr->Class->House];
+
 	AllowVoice = true;
 	switch (action) {
 
@@ -3935,9 +3937,11 @@ void Handle_Team(int team, int action)
 			**	If a non team member is currently selected, then deselect all objects
 			**	before selecting this team.
 			*/
-			if (CurrentObject.Count()) {
-				if (CurrentObject[0]->Is_Foot() && ((FootClass *)CurrentObject[0])->Group != team) {
+			for (index = 0; index < CurrentObject.Count(); index++) {
+				ObjectClass * obj = CurrentObject[index];
+				if (obj->Is_Foot() && ((FootClass *)obj)->Group != team) {
 					Unselect_All();
+					break;
 				}
 			}
 			for (index = 0; index < Vessels.Count(); index++) {
@@ -4036,8 +4040,8 @@ void Handle_Team(int team, int action)
 		case 2: {
 			long minx = 0x7FFFFFFFL, miny = 0x7FFFFFFFL;
 			long maxx = 0, maxy = 0;
-			TeamSpeed[team] = SPEED_WHEEL;
-			TeamMaxSpeed[team] = MPH_LIGHT_SPEED;
+			team_form_data.TeamSpeed[team] = SPEED_WHEEL;
+			team_form_data.TeamMaxSpeed[team] = MPH_LIGHT_SPEED;
 			for (index = 0; index < Units.Count(); index++) {
 				UnitClass * obj = Units.Ptr(index);
 				if (obj && !obj->IsInLimbo && obj->House->IsPlayerControl) {
@@ -4051,9 +4055,9 @@ void Handle_Team(int team, int action)
 						if (xc > maxx) maxx = xc;
 						if (yc < miny) miny = yc;
 						if (yc > maxy) maxy = yc;
-						if (obj->Class->MaxSpeed < TeamMaxSpeed[team]) {
-							TeamMaxSpeed[team] = obj->Class->MaxSpeed;
-							TeamSpeed[team] = obj->Class->Speed;
+						if (obj->Class->MaxSpeed < team_form_data.TeamMaxSpeed[team]) {
+							team_form_data.TeamMaxSpeed[team] = obj->Class->MaxSpeed;
+							team_form_data.TeamSpeed[team] = obj->Class->Speed;
 						}
 					}
 				}
@@ -4072,9 +4076,9 @@ void Handle_Team(int team, int action)
 						if (xc > maxx) maxx = xc;
 						if (yc < miny) miny = yc;
 						if (yc > maxy) maxy = yc;
-						if (obj->Class->MaxSpeed < TeamMaxSpeed[team]) {
-							TeamMaxSpeed[team] = obj->Class->MaxSpeed;
-							TeamSpeed[team] = obj->Class->Speed;
+						if (obj->Class->MaxSpeed < team_form_data.TeamMaxSpeed[team]) {
+							team_form_data.TeamMaxSpeed[team] = obj->Class->MaxSpeed;
+							team_form_data.TeamSpeed[team] = obj->Class->Speed;
 						}
 					}
 				}
@@ -4093,8 +4097,8 @@ void Handle_Team(int team, int action)
 						if (xc > maxx) maxx = xc;
 						if (yc < miny) miny = yc;
 						if (yc > maxy) maxy = yc;
-						if (obj->Class->MaxSpeed < TeamMaxSpeed[team]) {
-							TeamMaxSpeed[team] = obj->Class->MaxSpeed;
+						if (obj->Class->MaxSpeed < team_form_data.TeamMaxSpeed[team]) {
+							team_form_data.TeamMaxSpeed[team] = obj->Class->MaxSpeed;
 						}
 					}
 				}
@@ -5300,8 +5304,7 @@ static void Do_Record_Playback(void)
 		Session.RecordFile.Write (&TeamEvent, sizeof(TeamEvent));
 		Session.RecordFile.Write (&TeamNumber, sizeof(TeamNumber));
 		Session.RecordFile.Write (&FormationEvent, sizeof(FormationEvent));
-		Session.RecordFile.Write (TeamMaxSpeed, sizeof(TeamMaxSpeed));
-		Session.RecordFile.Write (TeamSpeed, sizeof(TeamSpeed));
+		Session.RecordFile.Write (TeamFormData, sizeof(TeamFormData));
 		Session.RecordFile.Write (&FormMove, sizeof(FormMove));
 		Session.RecordFile.Write (&FormSpeed, sizeof(FormSpeed));
 		Session.RecordFile.Write (&FormMaxSpeed, sizeof(FormMaxSpeed));
@@ -5372,11 +5375,11 @@ static void Do_Record_Playback(void)
 			Toggle_Formation();
 		}
 
-Session.RecordFile.Read (TeamMaxSpeed, sizeof(TeamMaxSpeed));
-Session.RecordFile.Read (TeamSpeed, sizeof(TeamSpeed));
-Session.RecordFile.Read (&FormMove, sizeof(FormMove));
-Session.RecordFile.Read (&FormSpeed, sizeof(FormSpeed));
-Session.RecordFile.Read (&FormMaxSpeed, sizeof(FormMaxSpeed));
+		Session.RecordFile.Read (TeamFormData, sizeof(TeamFormData));
+		Session.RecordFile.Read (&FormMove, sizeof(FormMove));
+		Session.RecordFile.Read (&FormSpeed, sizeof(FormSpeed));
+		Session.RecordFile.Read (&FormMaxSpeed, sizeof(FormMaxSpeed));
+
 		/*
 		**	The map isn't drawn in playback mode, so draw it here.
 		*/

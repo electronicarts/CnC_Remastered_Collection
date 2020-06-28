@@ -629,7 +629,7 @@ top_of_list:
 
 				// MBL 09.30.2019: We hit a runtime bounds crash where END (-1 / 0xFF) was being poked into +1 just past the end of the moves_right[] array;
 				// The FacingType moves_left[] and moves_right[] arrays already have MAX_MLIST_SIZE+2 as their size, which may have been a previous attempted fix;
-				// We are now passing MAX_MLIST_SIZE, since the sizeof calculations included the +2 buffering; This code does not exist in Tiberian Dawn.
+				// We are now passing MAX_MLIST_SIZE, since the sizeof calculations included the +2 buffering;
 				#if 0
 				left = Follow_Edge(startcell, next, &pleft, COUNTERCLOCK, direction, threat, threat_stage, sizeof(moves_left)/sizeof(moves_left[0]), threshhold);
 //				left = Follow_Edge(startcell, next, &pleft, COUNTERCLOCK, direction, threat, threat_stage, follow_len, threshhold);
@@ -649,7 +649,7 @@ top_of_list:
 
 				// MBL 09.30.2019: We hit a runtime bounds crash where END (-1 / 0xFF) was being poked into +1 just past the end of the moves_right[] array;
 				// The FacingType moves_left[] and moves_right[] arrays already have MAX_MLIST_SIZE+2 as their size, which may have been a previous attempted fix;
-				// We are now passing MAX_MLIST_SIZE, since the sizeof calculations included the +2 buffering; This code does not exist in Tiberian Dawn.
+				// We are now passing MAX_MLIST_SIZE, since the sizeof calculations included the +2 buffering;
 				#if 0
 				right = Follow_Edge(startcell, next, &pright, CLOCK, direction, threat, threat_stage, sizeof(moves_right)/sizeof(moves_right[0]), threshhold);
 //				right = Follow_Edge(startcell, next, &pright, CLOCK, direction, threat, threat_stage, follow_len, threshhold);

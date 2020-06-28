@@ -2112,6 +2112,31 @@ static AnimTypeClass const MineExp1(
 	ANIM_NONE
 );
 
+static AnimTypeClass const Flag(
+	ANIM_FLAG,						// Animation number.
+	"FLAGFLY",								// Data name of animation.
+	21,										// Maximum dimension of animation.
+	0,											// Biggest animation stage.
+	false,									// Theater specific art imagery?
+	false,										// Normalized animation rate?
+	false,									// Uses white translucent table?
+	false,									// Scorches the ground?
+	false,										// Forms a crater?
+	false,									// Sticks to unit in square?
+	false,									// Ground level animation?
+	false,									// Translucent colors in this animation?
+	false,									// Is this a flame thrower animation?
+	0,											// Damage to apply per tick (fixed point).
+	1,											// Delay between frames.
+	0,											// Starting frame number.
+	0,											// Loop start frame number.
+	-1,										// Ending frame of loop back.
+	-1,										// Number of animation stages.
+	-1,											// Number of times the animation loops.
+	VOC_NONE,							// Sound effect to play.
+	ANIM_NONE
+);
+
 #ifdef FIXIT_ANTS
 static AnimTypeClass const Ant1Death(
 	ANIM_ANT1_DEATH,						// Animation number.
@@ -2424,6 +2449,7 @@ void AnimTypeClass::Init_Heap(void)
 	new AnimTypeClass(CrateTQuake);
 	new AnimTypeClass(ParaBomb);
 	new AnimTypeClass(MineExp1);
+	new AnimTypeClass(Flag);
 #ifdef FIXIT_ANTS
 	new AnimTypeClass(Ant1Death);
 	new AnimTypeClass(Ant2Death);

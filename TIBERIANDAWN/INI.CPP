@@ -555,6 +555,11 @@ bool Read_Scenario_Ini(char *root, bool fresh)
 	}
 
 	/*
+	**	Scenario fix-up (applied on loaded games as well)
+	*/
+	Fixup_Scenario();
+
+	/*
 	**	Multi-player last-minute fixups:
 	**	- If computer players are disabled, remove all computer-owned houses
 	** - Otherwise, set MPlayerBlitz to 0 or 1, randomly

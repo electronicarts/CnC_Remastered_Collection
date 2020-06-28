@@ -1000,7 +1000,7 @@ void InfantryClass::Assign_Target(TARGET target)
 	*/
 	if (!Target_Legal(NavCom) && Class->IsCapture && Class->Primary == WEAPON_NONE) {
 		BuildingClass const * building = As_Building(target);
-		if (building && building->Class->IsCaptureable && (GameToPlay != GAME_NORMAL || *building != STRUCT_EYE && Scenario < 13)) {
+		if (building && building->Can_Capture()) {
 			Assign_Destination(target);
 		}
 	}
@@ -2086,8 +2086,12 @@ void InfantryClass::Scatter(COORDINATE threat, bool forced, bool nokidding)
 			newcell = Adjacent_Cell(Coord_Cell(Coord), newface);
 
 			if (Map.In_Radar(newcell) && Can_Enter_Cell(newcell) == MOVE_OK) {
-				Assign_Mission(MISSION_MOVE);
-				Assign_Destination(::As_Target(newcell));
+				if (!Class->IsAvoidingTiberium ||
+					Map[newcell].Overlay == OVERLAY_NONE ||
+					OverlayTypeClass::As_Reference(Map[newcell].Overlay).Land != LAND_TIBERIUM) {
+					Assign_Mission(MISSION_MOVE);
+					Assign_Destination(::As_Target(newcell));
+				}
 			}
 		}
 	}
@@ -2909,7 +2913,7 @@ ActionType InfantryClass::What_Action(ObjectClass * object) const
 		if (object->Owner() != Owner() &&
 			((object->What_Am_I() == RTTI_AIRCRAFT && ((AircraftClass *)object)->Pip_Count() == 0 && *((AircraftClass *)object) == AIRCRAFT_TRANSPORT) ||
 			(object->What_Am_I() == RTTI_BUILDING &&
-				((BuildingClass *)object)->Class->IsCaptureable && (GameToPlay != GAME_NORMAL || *((BuildingClass *)object) != STRUCT_EYE || Scenario < 13) ))
+				((BuildingClass *)object)->Can_Capture()))
 			) {
 
 			action = ACTION_CAPTURE;
@@ -2978,6 +2982,13 @@ void InfantryClass::Read_INI(char *buffer)
 			*/
 			classid = InfantryTypeClass::From_Name(strtok(NULL, ",\n\r"));
 
+			/*
+			**	Special case: replace C7 with C5 on scg08eb
+			*/
+			if (GameToPlay == GAME_NORMAL && PlayerPtr->ActLike == HOUSE_GOOD && Scenario == 8 && ScenVar == SCEN_VAR_B && classid == INFANTRY_C7) {
+				classid = INFANTRY_C5;
+			}
+
 			if (classid != INFANTRY_NONE) {
 
 				if (HouseClass::As_Pointer(inhouse) != NULL) {
@@ -3009,7 +3020,12 @@ void InfantryClass::Read_INI(char *buffer)
 							infantry->Trigger->AttachCount++;
 						}
 
-						if (infantry->Unlimbo(coord, dir)) {
+						/*
+						**	Special case: delete pre-placed Chan on scb10ea; he will spawn from the Tech Center.
+						*/
+						bool is_scb10ea_chan = GameToPlay == GAME_NORMAL && PlayerPtr->ActLike == HOUSE_BAD && Scenario == 10 && ScenVar == SCEN_VAR_A && *infantry == INFANTRY_CHAN;
+
+						if (!is_scb10ea_chan && infantry->Unlimbo(coord, dir)) {
 							infantry->Strength = Fixed_To_Cardinal(infantry->Class_Of().MaxStrength, strength);
 							if (GameToPlay == GAME_NORMAL || infantry->House->IsHuman) {
 								infantry->Assign_Mission(mission);
@@ -3181,6 +3197,11 @@ int InfantryClass::Made_A_Kill(void)
 void InfantryClass::Set_Occupy_Bit(CELL cell, int spot_index)
 {
 	Validate();
+
+	if ((unsigned)cell >= MAP_CELL_TOTAL) {
+		return;
+	}
+
 	/*
 	** Set the occupy postion for the spot that we passed in
 	*/
@@ -3208,6 +3229,11 @@ void InfantryClass::Set_Occupy_Bit(CELL cell, int spot_index)
 void InfantryClass::Clear_Occupy_Bit(CELL cell, int spot_index)
 {
 	Validate();
+
+	if ((unsigned)cell >= MAP_CELL_TOTAL) {
+		return;
+	}
+
 	/*
 	** Clear the occupy bit for the infantry in that cell
 	*/

@@ -47,6 +47,12 @@
 */
 #define STRAY_DISTANCE		2
 
+struct TeamFormDataStruct
+{
+	MPHType TeamMaxSpeed[MAX_TEAMS];
+	SpeedType TeamSpeed[MAX_TEAMS];
+};
+
 class TeamClass : public AbstractClass
 {
 	public:

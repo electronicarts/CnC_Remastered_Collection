@@ -2360,6 +2360,30 @@ static AnimTypeClass const ChemBall(
 	ANIM_NONE
 );
 
+static AnimTypeClass const Flag(
+	ANIM_FLAG,								// Animation number.
+	"FLAGFLY",								// Data name of animation.
+	21,										// Maximum dimension of animation.
+	0,											// Biggest animation stage.
+	false,									// Normalized animation rate?
+	false,									// Uses white translucent table?
+	false,									// Scorches the ground?
+	false,									// Forms a crater?
+	false,									// Sticks to unit in square?
+	false,									// Ground level animation?
+	false,									// Translucent colors in this animation?
+	false,									// Is this a flame thrower animation?
+	0x0000,									// Damage to apply per tick (fixed point).
+	1,											// Delay between frames.
+	0,											// Starting frame number.
+	0,											// Loop start frame number.
+	-1,										// Ending frame of loop back.
+	-1,										// Number of animation stages.
+	-1,											// Number of times the animation loops.
+	VOC_NONE,								// Sound effect to play.
+	ANIM_NONE
+);
+
 
 
 AnimTypeClass const * const AnimTypeClass::Pointers[ANIM_COUNT] = {
@@ -2459,6 +2483,7 @@ AnimTypeClass const * const AnimTypeClass::Pointers[ANIM_COUNT] = {
 	&StegDie,
 	&RaptDie,
 	&ChemBall,
+	&Flag,
 	&Fire3Virtual,
 	&Fire2Virtual,
 	&Fire1Virtual,
@@ -2502,7 +2527,7 @@ AnimTypeClass::AnimTypeClass(AnimType anim, char const *name, int size, int bigg
 	IsWhiteTrans = iswhitetrans;
 	LoopEnd = loopend;
 	LoopStart = loopstart;
-	Loops = (unsigned char)loops;
+	Loops = (char)loops;
 	Size = size;
 	Sound = sound;
 	Stages = stages;
