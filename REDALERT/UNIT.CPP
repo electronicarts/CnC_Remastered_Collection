@@ -99,6 +99,7 @@
 
 #include	"function.h"
 #include "COORDA.h"
+#include "Resurgence.h"
 
 /***********************************************************************************************
  * Recoil_Adjust -- Adjust pixel values in direction specified.                                *

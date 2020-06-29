@@ -93,7 +93,8 @@
  *   UnitClass::~UnitClass -- Destructor for unit objects.                                     *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+
+#include	"FUNCTION.H"
 
 /*
 ** This contains the value of the Virtual Function Table Pointer

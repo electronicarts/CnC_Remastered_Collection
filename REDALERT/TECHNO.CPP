@@ -131,6 +131,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"function.h"
+#include "Resurgence.h"
 
 
 /***************************************************************************
@@ -3971,6 +3972,7 @@ ResultType TechnoClass::Take_Damage(int & damage, int distance, WarheadType warh
 
 	switch (result) {
 		case RESULT_DESTROYED:
+			Resurgence::on_kill_event(source, this);
 			Transmit_Message(RADIO_OVER_OUT);
 			Stun();
 

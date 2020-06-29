@@ -900,6 +900,9 @@
     <ClCompile Include="DLLInterfaceEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Resurgence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ABSTRACT.H">
@@ -1765,6 +1768,9 @@
     </ClInclude>
     <ClInclude Include="Resource\resource.h">
       <Filter>Source Files\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Resurgence.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -248,6 +248,11 @@ class TechnoClass :	public RadioClass,
 		*/
 		unsigned char SaveLoadPadding[16];
 
+		// Added for Resurgence
+		unsigned int Experience;
+
+		// Added for Resurgence
+		unsigned int Level;
 
 		/*---------------------------------------------------------------------
 		**	Constructors, Destructors, and overloaded operators.
