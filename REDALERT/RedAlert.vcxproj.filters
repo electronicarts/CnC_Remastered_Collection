@@ -192,9 +192,6 @@
     <ClCompile Include="DEBUG.CPP">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DESCDLG.CPP">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DIAL8.CPP">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1050,9 +1047,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DEFINES.H">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DESCDLG.H">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DIAL8.H">

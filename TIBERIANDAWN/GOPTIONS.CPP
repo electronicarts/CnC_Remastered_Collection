@@ -43,7 +43,6 @@
 #include "gamedlg.h"
 #include "textbtn.h"
 #include "confdlg.h"
-#include "descdlg.h"
 
 void GameOptionsClass::Adjust_Variables_For_Resolution(void)
 {
