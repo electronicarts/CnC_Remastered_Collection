@@ -2449,10 +2449,6 @@ void TechnoClass::AI(void)
 	**	tell it not to.
 	*/
 	if (!House->IsHuman && As_Techno(TarCom) && As_Techno(TarCom)->House->Is_Ally(this)) {
-//#ifdef FIXIT_CSII	//	checked - ajw 9/28/98 (commented out)
-//if(What_Am_I() == RTTI_INFANTRY && *(InfantryClass *)this==INFANTRY_GENERAL && Session.Type==GAME_NORMAL && House->Class->House==HOUSE_UKRAINE) {
-//} else
-//#endif
 		Assign_Target(TARGET_NONE);
 	}
 
@@ -6445,6 +6441,65 @@ int TechnoTypeClass::Time_To_Build(HousesType house) const
 		PlayingAgainstVersion == VERSION_RED_ALERT_107) {
 #endif
 		time *= hptr->BuildSpeedBias;
+
+		// # of barracks provides a bonus to build time for infantry units - JDK
+		if (What_Am_I() == RTTI_INFANTRYTYPE)
+		{
+			// this is a hack to make infantry take longer while not necessarily costing more. - JDK
+			time *= fixed(0.075f);
+			
+			for (int index = 0; index < Buildings.Count(); index++)
+			{
+				BuildingClass* building = Buildings.Ptr(index);
+
+				if (building->Class->ToBuild == RTTI_INFANTRYTYPE && building->House == hptr)
+				{
+					time *= fixed(0.05f);
+				}
+			}
+		}
+
+		// # of war factories provides a bonus to build time for vehicle units - JDK
+		if (What_Am_I() == RTTI_UNITTYPE)
+		{
+			for (int index = 0; index < Buildings.Count(); index++)
+			{
+				BuildingClass* building = Buildings.Ptr(index);
+
+				if (building->Class->ToBuild == RTTI_UNITTYPE && building->House == hptr)
+				{
+					time *= fixed(0.05f);
+				}
+			}
+		}
+
+		// # of airstrips / helipads provides a bonus to build time for vehicle units - JDK
+		if (What_Am_I() == RTTI_AIRCRAFTTYPE)
+		{
+			for (int index = 0; index < Buildings.Count(); index++)
+			{
+				BuildingClass* building = Buildings.Ptr(index);
+
+				if (building->Class->ToBuild == RTTI_AIRCRAFTTYPE && building->House == hptr)
+				{
+					time *= fixed(0.05f);
+				}
+			}
+		}
+
+		// # of shipyards / sub pens provides a bonus to build time for vessels - JDK
+		if (What_Am_I() == RTTI_VESSELTYPE)
+		{
+			for (int index = 0; index < Buildings.Count(); index++)
+			{
+				BuildingClass* building = Buildings.Ptr(index);
+
+				if (building->Class->ToBuild == RTTI_VESSELTYPE && building->House == hptr)
+				{
+					time *= fixed(0.05f);
+				}
+			}
+		}
 	}
 	else {
 		if (What_Am_I() == RTTI_BUILDINGTYPE || What_Am_I() == RTTI_INFANTRYTYPE) {
