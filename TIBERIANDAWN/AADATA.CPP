@@ -78,7 +78,7 @@ static AircraftTypeClass const AttackPlane(
 		true,					// Is there a crew inside?
 	3,							// Number of shots it has (default).
 	60,						// The strength of this unit.
-	0,							// The range that it reveals terrain around itself.
+	2,							// The range that it reveals terrain around itself.
 	800,						// Credit cost to construct.
 	0,							// The scenario this becomes available.
 	10,1,						// Risk, reward when calculating AI.
