@@ -434,6 +434,16 @@ bool Init_Game(int , char * [])
 	ChronalVortex.Stop();
 	ChronalVortex.Setup_Remap_Tables(Scen.Theater);
 
+	/*
+	**	Clear out name overrides array
+	*/
+#ifdef FIXIT_NAME_OVERRIDE
+	for (int index = 0; index < ARRAY_SIZE(NameOverride); index++) {
+		NameOverride[index] = NULL;
+		NameIDOverride[index] = 0;
+	}
+#endif //FIXIT_NAME_OVERRIDE
+
 	return(true);
 }
 

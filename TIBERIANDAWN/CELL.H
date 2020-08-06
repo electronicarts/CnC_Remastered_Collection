@@ -208,7 +208,7 @@ class CellClass
 		InfantryClass *  Cell_Infantry(void) const;
 		TriggerClass *  Get_Trigger(void) const;
 		int  Clear_Icon(void) const;
-		bool  Goodie_Check(FootClass * object);
+		bool  Goodie_Check(FootClass * object, bool check_steel = false);
 		ObjectClass *  Fetch_Occupier(void) const;
 		bool Get_Template_Info(char *template_name, int &icon, void *&image_data);
 

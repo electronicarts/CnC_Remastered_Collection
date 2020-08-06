@@ -1936,7 +1936,7 @@ long CellClass::Tiberium_Adjust(bool pregame)
  *   05/22/1995 JLB : Created.                                                                 *
  *   07/08/1995 JLB : Added a bunch of goodies to the crates.                                  *
  *=============================================================================================*/
-bool CellClass::Goodie_Check(FootClass * object)
+bool CellClass::Goodie_Check(FootClass * object, bool check_steel)
 {
 	Validate();
 	enum {
@@ -1990,21 +1990,30 @@ bool CellClass::Goodie_Check(FootClass * object)
 		bool steel = (Overlay == OVERLAY_STEEL_CRATE);
 		COORDINATE coord;			// Temporary working coordinate value.
 
-		/*
-		**	A triggered crate is automatically destroyed regardless of who or how
-		**	it was triggered.
-		*/
-		Redraw_Objects();
-		Overlay = OVERLAY_NONE;
-		OverlayData = 0;
+		if (check_steel && steel) {
 
-		if (steel) {
+			/*
+			**	A triggered crate is automatically destroyed regardless of who or how
+			**	it was triggered.
+			*/
+			Redraw_Objects();
+			Overlay = OVERLAY_NONE;
+			OverlayData = 0;
+
 			if (object->Owner() == HOUSE_BAD) {
 				object->House->Add_Nuke_Piece();
 				new AnimClass(ANIM_CRATE_EMPULSE, Cell_Coord());
 			}
 
-		} else {
+		} else if(!check_steel && !steel) {
+
+			/*
+			**	A triggered crate is automatically destroyed regardless of who or how
+			**	it was triggered.
+			*/
+			Redraw_Objects();
+			Overlay = OVERLAY_NONE;
+			OverlayData = 0;
 
 			int index;
 			UnitClass * unit = 0;
@@ -2428,9 +2437,18 @@ void CellClass::Flag_Create(void)
 {
 	if (!CTFFlag) {
 		CTFFlag = new AnimClass(ANIM_FLAG, Cell_Coord(), 0, 1, true);
-		if (CTFFlag) {
-			CTFFlag->OwnerHouse = Owner;
+		if (CTFFlag == NULL) {
+			for (int i = 0; i < Anims.Count(); ++i) {
+				AnimClass* anim = Anims.Ptr(i);
+				if (*anim != ANIM_FLAG) {
+					anim->Delete_This();
+					break;
+				}
+			}
+			CTFFlag = new AnimClass(ANIM_FLAG, Cell_Coord(), 0, 1, true);
 		}
+		assert(CTFFlag != NULL);
+		CTFFlag->OwnerHouse = Owner;
 	}
 }
 

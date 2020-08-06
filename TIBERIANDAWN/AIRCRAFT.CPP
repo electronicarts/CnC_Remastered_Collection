@@ -245,6 +245,7 @@ AircraftClass::AircraftClass(AircraftType classid, HousesType house) :
 	NavCom = TARGET_NONE;
 	SecondaryFacing = PrimaryFacing;
 	Jitter = 0;
+	ReinforcementStart = -1;
 
 	/*
 	** Keep count of the number of units created. Dont track cargo planes as they are created
@@ -346,6 +347,14 @@ void AircraftClass::Draw_It(int x, int y, WindowNumberType window)
 	int shapenum = 0;
 	int facing = Facing_To_32(SecondaryFacing);
 
+	/*
+	**	Don't draw Cargo aircraft that are delayed.
+	*/
+	if (Special.ModernBalance) {
+		if (*this == AIRCRAFT_CARGO && !Map.In_Radar(Coord_Cell(Coord)) && ReinforcementStart > Frame) {
+			return;
+		}
+	}
 
 	/*
 	**	Verify the legality of the unit class.
@@ -743,7 +752,17 @@ void AircraftClass::AI(void)
 			Mark();
 		}
 	}
-	if (Physics(Coord, PrimaryFacing) != RESULT_NONE) {
+
+	/*
+	**	Handle reinforcement delay.
+	*/
+	bool do_physics = true;
+	if (Special.ModernBalance) {
+		if (*this == AIRCRAFT_CARGO && !Map.In_Radar(Coord_Cell(Coord)) && ReinforcementStart > Frame) {
+			do_physics = false;
+		}
+	}
+	if (do_physics && Physics(Coord, PrimaryFacing) != RESULT_NONE) {
 		Mark();
 	}
 
@@ -1399,9 +1418,13 @@ int AircraftClass::Mission_Retreat(void)
 {
 	Validate();
 	if (Class->IsFixedWing) {
-		if (Class->IsFixedWing && Altitude < FLIGHT_LEVEL) {
+		if (*this == AIRCRAFT_CARGO) {
+			PrimaryFacing.Set_Desired(DIR_W);
+			SecondaryFacing.Set_Desired(PrimaryFacing.Desired());
+		}
+		if (Altitude < FLIGHT_LEVEL) {
 			Altitude++;
-			return(3);
+			return(1);
 		}
 		return(TICKS_PER_SECOND*10);
 	}
@@ -2175,7 +2198,7 @@ ActionType AircraftClass::What_Action(CELL cell) const
 	ActionType action = FootClass::What_Action(cell);
 
 	//using function for IsVisible so we have different results for different players - JAS 2019/09/30
-	if (action == ACTION_MOVE && !Map[cell].Is_Visible(PlayerPtr)) {
+	if ((action == ACTION_MOVE || action == ACTION_ATTACK) && !Map[cell].Is_Visible(PlayerPtr)) {
 		action = ACTION_NOMOVE;
 	}
 
@@ -2438,7 +2461,7 @@ int AircraftClass::Mission_Attack(void)
  * HISTORY:                                                                                    *
  *   06/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-TARGET AircraftClass::New_LZ(TARGET oldlz) const
+TARGET AircraftClass::New_LZ(TARGET oldlz, bool stable) const
 {
 	Validate();
 	if (Target_Legal(oldlz) && (!Is_LZ_Clear(oldlz) || !Cell_Seems_Ok(As_Cell(oldlz)))) {
@@ -2449,7 +2472,7 @@ TARGET AircraftClass::New_LZ(TARGET oldlz) const
 		**	in cells.
 		*/
 		for (int radius = 0; radius < 16; radius++) {
-			FacingType modifier = Random_Pick(FACING_N, FACING_NW);
+			FacingType modifier = stable ? FACING_N : Random_Pick(FACING_N, FACING_NW);
 			CELL lastcell = -1;
 
 			/*
@@ -2838,8 +2861,9 @@ TARGET AircraftClass::Good_Fire_Location(TARGET target) const
 			for (int face = 0; face < 255; face += 16) {
 				COORDINATE newcoord = Coord_Move(tcoord, (DirType)face, r);
 				CELL newcell = Coord_Cell(newcoord);
+				CELL actualcell = Coord_Cell(Coord_Sub(newcoord, XYPixel_Coord(0, FLIGHT_LEVEL)));
 
-				if (Map.In_Radar(newcell) && (GameToPlay != GAME_NORMAL || Map[newcell].Is_Visible(PlayerPtr)) && Cell_Seems_Ok(newcell, true)) {
+				if (Map.In_Radar(actualcell) && (GameToPlay != GAME_NORMAL || Map[newcell].Is_Visible(PlayerPtr)) && Cell_Seems_Ok(newcell, true)) {
 					int dist = Distance(newcoord);
 					if (bestval == -1 || dist < bestval) {
 						best2val = bestval;
@@ -3545,4 +3569,9 @@ void AircraftClass::Response_Select(void)
 	if (AllowVoice) {
 		Sound_Effect(response, 0, -(Aircraft.ID(this)+1));
 	}
+}
+
+void AircraftClass::Set_Reinforcement_Delay(long delay)
+{
+	ReinforcementStart = Frame + delay;
 }

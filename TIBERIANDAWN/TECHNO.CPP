@@ -1021,7 +1021,7 @@ void TechnoClass::Draw_It(int x, int y, WindowNumberType window)
 	Clear_Redraw_Flag();
 
 	const bool show_health_bar =
-		(Strength > 0) && ((Cloak != CLOAKED) || Is_Owned_By_Player()) &&
+		(Strength > 0) && !Is_Cloaked(PlayerPtr) &&
 		(Is_Selected_By_Player() ||
 		((Special.HealthBarDisplayMode == SpecialClass::HB_DAMAGED) && (Strength < Techno_Type_Class()->MaxStrength)) ||
 		(Special.HealthBarDisplayMode == SpecialClass::HB_ALWAYS));
@@ -1191,7 +1191,8 @@ bool TechnoClass::In_Range(TARGET target, int which, bool reciprocal_check) cons
 		if (building) {
 			range += ((building->Class->Width() + building->Class->Height()) * (ICON_LEPTON_W / 4));
 		}
-		if (::Distance(Fire_Coord(which), As_Coord(target)) <= range) {
+		FireDataType data = Fire_Data(which);
+		if (MAX(0, ::Distance(data.Center, As_Coord(target)) - data.Distance) <= range) {
 			return(true);
 		}
 		
@@ -1244,8 +1245,8 @@ bool TechnoClass::In_Range(ObjectClass const * target, int which, bool reciproca
 			BuildingClass const * building = (BuildingClass const *)target;
 			range += ((building->Class->Width() + building->Class->Height()) * (ICON_LEPTON_W / 4));
 		}
-
-		if (::Distance(Fire_Coord(which), target->Center_Coord()) <= range) {
+		FireDataType data = Fire_Data(which);
+		if (MAX(0, ::Distance(data.Center, target->Center_Coord()) - data.Distance) <= range) {
 			return(true);
 		}
 		
@@ -1367,7 +1368,7 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	/*
 	**	If the object is cloaked, then it isn't a legal target.
 	*/
-	if (object->Cloak == CLOAKED) return(false);
+	if (object->Is_Cloaked(this)) return(false);
 
 	/*
 	**	Determine if the target is theoretically allowed to be a target. If
@@ -2103,7 +2104,7 @@ FireErrorType TechnoClass::Can_Fire(TARGET target, int which) const
 //Mono_Printf("Buildings[0]=%p.\n", Buildings.Raw_Ptr(0));
 //Mono_Printf("Aircraft[0]=%p.\n", Aircraft.Raw_Ptr(0));
 //Mono_Printf("object=%p, Strength=%d, IsActive=%d, IsInLimbo=%d.\n", object, (long)object->Strength, object->IsActive, object->IsInLimbo);Get_Key();
-	if (object && /*(object->IsActive || GameToPlay != GAME_NORMAL) &&*/ object->Is_Techno() && ((TechnoClass *)object)->Cloak == CLOAKED) {
+	if (object && /*(object->IsActive || GameToPlay != GAME_NORMAL) &&*/ object->Is_Techno() && ((TechnoClass *)object)->Is_Cloaked(this)) {
 		return(FIRE_CANT);
 	}
 
@@ -2425,7 +2426,7 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 		}
 #else
 		/*
-		** Now need to reveal for any human player that is the target. ST - 3/13/2019 5:43PM
+		** Now need to reveal for any player that is the target. ST - 3/13/2019 5:43PM
 		*/
 
 		ObjectClass *obj = As_Object(target);
@@ -2433,7 +2434,7 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 			HousesType tgt_owner = obj->Owner();
 
 			HouseClass *player = HouseClass::As_Pointer(tgt_owner);
-			if (player != nullptr && player->IsHuman) {
+			if (player != nullptr) {
 				if ((!Is_Owned_By_Player(player) && !Is_Discovered_By_Player(player)) || !Map[Coord_Cell(Center_Coord())].Is_Mapped(House)) {
 					Map.Sight_From(player, Coord_Cell(Center_Coord()), 1, false);
 				}
@@ -4442,6 +4443,7 @@ BuildingClass * TechnoClass::Find_Docking_Bay(StructType b, bool friendly) const
 				if (bestval == -1 || Distance(building) < bestval || building->IsLeader) {
 					best = building;
 					bestval = Distance(building);
+					if (building->IsLeader) break;
 				}
 			}
 		}
@@ -4616,7 +4618,22 @@ bool TechnoClass::Is_Owned_By_Player(HouseClass *player) const
 }			  
 
 
+bool TechnoClass::Is_Cloaked(HousesType house) const
+{
+	return !House->Is_Ally(house) && (Cloak == CLOAKED);
+}
 
+
+bool TechnoClass::Is_Cloaked(HouseClass const * house) const
+{
+	return !House->Is_Ally(house) && (Cloak == CLOAKED);
+}
+
+
+bool TechnoClass::Is_Cloaked(ObjectClass const * object) const
+{
+	return !House->Is_Ally(object) && (Cloak == CLOAKED);
+}
 
 
 

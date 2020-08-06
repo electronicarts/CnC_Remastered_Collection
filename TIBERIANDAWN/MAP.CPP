@@ -362,11 +362,9 @@ void MapClass::Sight_From(HouseClass *house, CELL cell, int sightrange, bool inc
 		**	adjacent cells as well. For full scans, just update
 		**	the cell itself.
 		*/
-		if (!(*this)[newcell].Is_Mapped(house)) {
-			// Pass the house through, instead of assuming it's the local player. ST - 3/6/2019 10:26AM
-			//Map.Map_Cell(newcell, PlayerPtr);
-			Map.Map_Cell(newcell, house, true);
-		}
+		// Pass the house through, instead of assuming it's the local player. ST - 3/6/2019 10:26AM
+		//Map.Map_Cell(newcell, PlayerPtr);
+		Map.Map_Cell(newcell, house, true);
 	}
 }
 
@@ -950,6 +948,15 @@ void MapClass::Logic(void)
 	if (TiberiumScan >= MAP_CELL_TOTAL) {
 		int tries = 1;
 		if (Special.IsTFast || GameToPlay != GAME_NORMAL) tries = 2;
+		
+		/*
+		** Use the Tiberium setting as a multiplier on growth rate. ST - 7/1/2020 3:05PM
+		*/
+		if (GameToPlay == GAME_GLYPHX_MULTIPLAYER) {
+			if (MPlayerTiberium > 1) {
+				tries += (MPlayerTiberium - 1) << 1;
+			}
+		}
 		TiberiumScan = 0;
 		IsForwardScan = (IsForwardScan == false);
 
@@ -958,10 +965,16 @@ void MapClass::Logic(void)
 		*/
 		if (TiberiumGrowthCount) {
 			for (int i = 0; i < tries; i++) {
-				CELL cell = TiberiumGrowth[Random_Pick(0, TiberiumGrowthCount-1)];
+				int pick = Random_Pick(0, TiberiumGrowthCount-1);
+				CELL cell = TiberiumGrowth[pick];
 				CellClass * newcell = &(*this)[cell];
 				if (newcell->Land_Type() == LAND_TIBERIUM && newcell->OverlayData < 12-1) {
 					newcell->OverlayData++;
+				}
+				TiberiumGrowth[pick] = TiberiumGrowth[TiberiumGrowthCount - 1];
+				TiberiumGrowthCount--;
+				if (TiberiumGrowthCount <= 0) {
+					break;
 				}
 			}
 		}
@@ -972,7 +985,8 @@ void MapClass::Logic(void)
 		*/
 		if (TiberiumSpreadCount) {
 			for (int i = 0; i < tries; i++) {
-				CELL cell = TiberiumSpread[Random_Pick(0, TiberiumSpreadCount-1)];
+				int pick = Random_Pick(0, TiberiumSpreadCount-1);
+				CELL cell = TiberiumSpread[pick];
 
 				/*
 				**	Find a pseudo-random adjacent cell that doesn't contain any tiberium.
@@ -1002,6 +1016,11 @@ void MapClass::Logic(void)
 							if (found) break;
 						}
 					}
+				}
+				TiberiumSpread[pick] = TiberiumSpread[TiberiumSpreadCount - 1];
+				TiberiumSpreadCount--;
+				if (TiberiumSpreadCount <= 0) {
+					break;
 				}
 			}
 		}
@@ -1400,10 +1419,10 @@ ObjectClass * MapClass::Close_Object(COORDINATE coord) const
 			while (o) {
 
 				/*
-				**	Special case check to ignore cloaked object if not owned by the player.
+				**	Special case check to ignore cloaked object if not allied with the player.
 				*/
 				// Changed for multiplayer. ST - 3/13/2019 5:38PM
-				if (!o->Is_Techno() || ((TechnoClass *)o)->Is_Owned_By_Player() || ((TechnoClass *)o)->Cloak != CLOAKED) {
+				if (!o->Is_Techno() || !((TechnoClass *)o)->Is_Cloaked(PlayerPtr)) {
 				//if (!o->Is_Techno() || ((TechnoClass *)o)->IsOwnedByPlayer || ((TechnoClass *)o)->Cloak != CLOAKED) {
 					int d=-1;
 					if (o->What_Am_I() == RTTI_BUILDING) {
@@ -1429,7 +1448,7 @@ ObjectClass * MapClass::Close_Object(COORDINATE coord) const
 		AircraftClass * aircraft = Aircraft.Ptr(index);
 
 		if (aircraft->In_Which_Layer() != LAYER_GROUND) {
-			if (aircraft->Is_Owned_By_Player() || (aircraft->Cloak != CLOAKED)) {
+			if (!aircraft->Is_Cloaked(PlayerPtr)) {
 				int d = Distance(coord, Coord_Add(aircraft->Center_Coord(), XY_Coord(0, -Pixel_To_Lepton(aircraft->Altitude))));
 				if (d >= 0 && (!object || d < distance)) {
 					distance = d;

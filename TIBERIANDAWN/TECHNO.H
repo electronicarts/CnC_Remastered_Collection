@@ -280,8 +280,11 @@ class TechnoClass :	public RadioClass,
 		virtual int Weapon_Range(int which) const;
 		virtual bool Captured(HouseClass * newowner);
 		virtual ResultType Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source);
-		bool  Evaluate_Cell(ThreatType method, int mask, CELL cell, int range, TechnoClass const ** object, int & value) const;
-		bool  Evaluate_Object(ThreatType method, int mask, int range, TechnoClass const * object, int & value) const;
+		bool Evaluate_Cell(ThreatType method, int mask, CELL cell, int range, TechnoClass const ** object, int & value) const;
+		bool Evaluate_Object(ThreatType method, int mask, int range, TechnoClass const * object, int & value) const;
+		bool Is_Cloaked(HousesType house) const;
+		bool Is_Cloaked(HouseClass const * house) const;
+		bool Is_Cloaked(ObjectClass const * object) const;
 
 		/*
 		**	AI.

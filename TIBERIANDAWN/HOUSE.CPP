@@ -569,16 +569,18 @@ bool HouseClass::Can_Build(TechnoTypeClass const * type, HousesType house) const
 	*/
 	long flags = ActiveBScan;
 
-#ifdef USE_RA_AI
-	// OldBScan Copied from RA for AI. ST - 7/25/2019 3:27PM
 	/*
-	**	The computer records prerequisite buildings because it can't relay on the
-	**	sidebar to keep track of this information.
+	**	AI players update flags using building quantity tracker.
+	**	Ensures consistent logic when determining building choices.
 	*/
 	if (!IsHuman) {
-		flags = OldBScan;
+		flags = 0;
+		for (int i = 0; i < 32; i++) {
+			if (BQuantity[i] > 0) {
+				flags |= (1 << i);
+			}
+		}
 	}
-#endif
 
 	int pre = type->Pre;
 	if (flags & STRUCTF_ADVANCED_POWER) flags |= STRUCTF_POWER;
@@ -972,6 +974,12 @@ void HouseClass::AI(void)
 	if (IsToDie && BorrowedTime.Expired()) {
 		IsToDie = false;
 		Blowup_All();
+
+		// MBL 07.15.2020 - Steve made this change for RA, so also applying here to TD
+		// See Change 737595 by Steve_Tall@STEVET3-VICTORY-H on 2020/07/10 13:40:02
+		if (GameToPlay == GAME_GLYPHX_MULTIPLAYER) {
+			MPlayer_Defeated();
+		}
 	}
 
 	/*
@@ -1424,7 +1432,7 @@ void HouseClass::AI(void)
 	}
 #endif
 
-	if (GameToPlay != GAME_NORMAL) {
+	if (GameToPlay != GAME_NORMAL && Class->House != HOUSE_JP) {
 		Check_Pertinent_Structures();
 	}
 
@@ -1664,8 +1672,15 @@ void HouseClass::AI(void)
 void HouseClass::Attacked(BuildingClass* source)
 {
 	Validate();
-	if (SpeakAttackDelay.Expired() && PlayerPtr->Class->House == Class->House) {
+
+	bool expired = SpeakAttackDelay.Expired();
+	bool spoke = false;
+
+	// if (SpeakAttackDelay.Expired() && PlayerPtr->Class->House == Class->House) {
+	if (expired && PlayerPtr->Class->House == Class->House) {
+
 		Speak(VOX_BASE_UNDER_ATTACK, NULL, source ? source->Center_Coord() : 0);
+		spoke = true;
 
 		// MBL 06.13.2020 - Timing change from 2 minute cooldown, per https://jaas.ea.com/browse/TDRA-6784
 		// SpeakAttackDelay.Set(Options.Normalize_Delay(SPEAK_DELAY)); // 2 minutes
@@ -1680,6 +1695,23 @@ void HouseClass::Attacked(BuildingClass* source)
 			HouseTriggers[Class->House][index]->Spring(EVENT_ATTACKED, Class->House);
 		}
 	}
+
+	// MBL 07.07.2020 - CNC Patch 3, fix for not working for all players in MP, per https://jaas.ea.com/browse/TDRA-7249
+	// Separated to here as did not want to change any logic around the HouseTriggers[] Spring events
+	//
+	if (expired == true && spoke == false) 
+	{
+		if (GameToPlay != GAME_NORMAL) // Multiplayer
+		{
+			Speak(VOX_BASE_UNDER_ATTACK, this);
+			spoke = true;
+	
+			// SpeakAttackDelay.Set(Options.Normalize_Delay(SPEAK_DELAY)); // 2 minutes
+			// SpeakAttackDelay.Set(Options.Normalize_Delay(TICKS_PER_MINUTE/2)); // 30 seconds as requested
+			SpeakAttackDelay.Set(Options.Normalize_Delay( (TICKS_PER_MINUTE/2)+(TICKS_PER_SECOND*5) )); // Tweaked for accuracy
+		}
+	}
+	// END MBL 07.07.2020
 }
 
 
@@ -4051,6 +4083,13 @@ void HouseClass::MPlayer_Defeated(void)
 		}
 	}
 
+	/*
+	**	Remove any one-time superweapons the player might have.
+	*/
+	IonCannon.Remove(true);
+	AirStrike.Remove(true);
+	NukeStrike.Remove(true);
+
 	/*------------------------------------------------------------------------
 	If this is me:
 	- Set MPlayerObiWan, so I can only send messages to all players, and
@@ -4781,6 +4820,13 @@ void HouseClass::Check_Pertinent_Structures(void)
 	}
 		  
 	if (IsToDie || IsToWin || IsToLose) {
+		return;
+	}
+
+	// MBL 07.15.2020 - Prevention of recent issue with constant "player defeated logic" and message to client spamming
+	// Per https://jaas.ea.com/browse/TDRA-7433
+	//
+	if (IsDefeated) {
 		return;
 	}
 

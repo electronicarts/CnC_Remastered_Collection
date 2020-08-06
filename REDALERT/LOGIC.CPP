@@ -316,6 +316,7 @@ void LogicClass::AI(void)
 	*/
 	for (index = 0; index < Count(); index++) {
 		ObjectClass * obj = (*this)[index];
+		int count = Count();
 
 		BStart(BENCH_AI);
 		obj->AI();
@@ -354,8 +355,9 @@ void LogicClass::AI(void)
 		**	If the object was destroyed in the process of performing its AI, then
 		**	adjust the index so that no object gets skipped.
 		*/
-		if (obj != (*this)[index]) {
-			index--;
+		int count_diff = Count() - count;
+		if (count_diff < 0) {
+			index += count_diff;
 		}
 	}
 	HouseClass::Recalc_Attributes();

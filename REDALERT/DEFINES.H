@@ -3615,6 +3615,15 @@ typedef enum OptionControlType : char {
 } OptionControlType;
 
 
+/****************************************************************************
+**	Used to store firing data for a unit.
+*/
+typedef struct {
+	COORDINATE Center;
+	int Distance;
+} FireDataType;
+
+
 #define size_of(typ,id) sizeof(((typ*)0)->id)
 
 

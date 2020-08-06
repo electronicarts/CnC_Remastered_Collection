@@ -271,7 +271,7 @@ class TechnoClass :	public RadioClass,
 		bool Is_Ready_To_Cloak(void) const;
 		virtual int How_Many_Survivors(void) const;
 		virtual DirType Turret_Facing(void) const {return(PrimaryFacing.Current());}
-		CELL Nearby_Location(TechnoClass const * from=NULL) const;
+		CELL Nearby_Location(TechnoClass const * from=NULL, int locationmod=0) const;
 		TechnoTypeClass * Techno_Type_Class(void) const {return((TechnoTypeClass *)&Class_Of());};
 		bool Is_Visible_On_Radar(void) const;
 		int Anti_Air(void) const;
@@ -282,6 +282,7 @@ class TechnoClass :	public RadioClass,
 		virtual ActionType What_Action(ObjectClass const * target) const;
 		virtual BuildingClass * Find_Docking_Bay(StructType b, bool friendly) const;
 		virtual CELL Find_Exit_Cell(TechnoClass const * techno) const;
+		virtual FireDataType Fire_Data(int) const;
 		virtual COORDINATE Fire_Coord(int which) const;
 		virtual DirType Desired_Load_Dir(ObjectClass * , CELL & moveto) const;
 		virtual DirType Fire_Direction(void) const;
@@ -338,6 +339,9 @@ class TechnoClass :	public RadioClass,
 		bool Evaluate_Object(ThreatType method, int mask, int range, TechnoClass const * object, int & value, int zone=-1) const;
 		int Evaluate_Just_Cell(CELL cell) const;
 		virtual bool Electric_Zap (COORDINATE target_coord, int which, WindowNumberType window, COORDINATE source_coord=0L, unsigned char * remap=NULL) const;
+		bool Is_Cloaked(HousesType house, bool check_invisible=false) const;
+		bool Is_Cloaked(HouseClass const * house, bool check_invisible=false) const;
+		bool Is_Cloaked(ObjectClass const * object, bool check_invisible=false) const;
 
 		/*
 		**	AI.

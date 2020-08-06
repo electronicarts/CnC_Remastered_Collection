@@ -173,7 +173,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 		case RADIO_CAN_LOAD:
 			TechnoClass::Receive_Message(from, message, param);
 			if (!House->Is_Ally(from)) return(RADIO_STATIC);
-			if (Mission == MISSION_CONSTRUCTION || Mission == MISSION_DECONSTRUCTION || BState == BSTATE_CONSTRUCTION || (!ScenarioInit && In_Radio_Contact() && Contact_With_Whom() != from)) return(RADIO_NEGATIVE);
+			if (Mission == MISSION_CONSTRUCTION || Mission == MISSION_DECONSTRUCTION || BState == BSTATE_CONSTRUCTION || (!ScenarioInit && Class->Type != STRUCT_REFINERY && In_Radio_Contact())) return(RADIO_NEGATIVE);
 			switch (Class->Type) {
 				case STRUCT_AIRSTRIP:
 					if (from->What_Am_I() == RTTI_AIRCRAFT && ((AircraftClass const *)from)->Class->IsFixedWing) {
@@ -200,7 +200,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 						*((UnitClass *)from) == UNIT_HARVESTER &&
 						(ScenarioInit || !Is_Something_Attached())) {
 
-						return(RADIO_ROGER);
+						return((Contact_With_Whom() != from) ? RADIO_ROGER : RADIO_NEGATIVE);
 					}
 					break;
 
@@ -2572,13 +2572,21 @@ void BuildingClass::Grand_Opening(bool captured)
 				**	to place it in a nearby location.
 				*/
 				if (!unit->Unlimbo(Cell_Coord(cell), DIR_W)) {
-					cell = unit->Nearby_Location(this);
+					/*
+					**	Check multiple times for clear locations.
+					*/
+					for (int i = 0; i < 10; i++) {
+						cell = unit->Nearby_Location(this, i);
+						if (unit->Unlimbo(Cell_Coord(cell), DIR_SW)) {
+							break;
+						}
+					}
 
 					/*
 					**	If the harvester could still not be placed, then refund the money
 					**	to the owner and then bail.
 					*/
-					if (!unit->Unlimbo(Cell_Coord(cell), DIR_SW)) {
+					if (unit->IsInLimbo) {
 						House->Refund_Money(unit->Class->Cost_Of());
 						delete unit;
 					}
@@ -3726,9 +3734,16 @@ int BuildingClass::Mission_Deconstruction(void)
 					}
 				}
 
-				if (House->IsPlayerControl) {
+				// MBL 07.10.2020 - In 1v1, sometimes both players will hear this SFX, or neither player will hear it
+				// Making it so all players hear it positionally in the map; Per thread discussion in https://jaas.ea.com/browse/TDRA-7245
+				//
+				#if 0
+					if (House->IsPlayerControl) {
+						Sound_Effect(VOC_CASHTURN, Coord);
+					}
+				#else
 					Sound_Effect(VOC_CASHTURN, Coord);
-				}
+				#endif
 				
 				/*
 				**	Destroy all attached objects. ST - 4/24/2020 9:38PM

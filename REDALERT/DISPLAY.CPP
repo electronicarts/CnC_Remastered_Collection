@@ -3146,9 +3146,9 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 			object = Map.Close_Object(coord);
 
 			/*
-			**	Special case check to ignore cloaked object if not owned by the player.
+			**	Special case check to ignore cloaked object if not allied with the player.
 			*/
-			if (object != NULL && object->Is_Techno() && !((TechnoClass *)object)->IsOwnedByPlayer && (((TechnoClass *)object)->Cloak == CLOAKED || ((TechnoClass *)object)->Techno_Type_Class()->IsInvisible)) {
+			if (object != NULL && object->Is_Techno() && ((TechnoClass *)object)->Is_Cloaked(PlayerPtr, true)) {
 				object = NULL;
 			}
 		}

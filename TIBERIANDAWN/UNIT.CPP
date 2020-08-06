@@ -390,7 +390,7 @@ void UnitClass::AI(void)
 	**	Delete this unit if it finds itself off the edge of the map and it is in
 	**	guard or other static mission mode.
 	*/
-	if (!Team && Mission == MISSION_GUARD && !Map.In_Radar(Coord_Cell(Coord))) {
+	if (!Team && Mission == MISSION_GUARD && MissionQueue == MISSION_NONE && !Map.In_Radar(Coord_Cell(Coord))) {
 		Stun();
 		Delete_This();
 		return;
@@ -499,6 +499,13 @@ void UnitClass::AI(void)
 				}
 			}
 		}
+	}
+
+	/*
+	**	Scatter units off buildings in guard modes.
+	*/
+	if (!IsTethered && !IsFiring && !IsDriving && !IsRotating && (Mission == MISSION_GUARD || Mission == MISSION_GUARD_AREA) && MissionQueue == MISSION_NONE && Map[Coord_Cell(Coord)].Cell_Building() != NULL) {
+		Scatter(0, true, true);
 	}
 
 	/*
@@ -1259,6 +1266,11 @@ void UnitClass::Player_Assign_Mission(MissionType mission, TARGET target, TARGET
 	Validate();
 	if (mission == MISSION_HARVEST) {
 		ArchiveTarget = TARGET_NONE;
+	} else if (mission == MISSION_ENTER) {
+		BuildingClass* building = As_Building(destination);
+		if (building != NULL && *building == STRUCT_REFINERY && building->In_Radio_Contact()) {
+			building->Transmit_Message(RADIO_OVER_OUT);
+		}
 	}
 	TarComClass::Player_Assign_Mission(mission, target, destination);
 }
@@ -1817,7 +1829,7 @@ void UnitClass::Per_Cell_Process(bool center)
 		} else {
 			TechnoClass * contact = Contact_With_Whom();
 			if (Transmit_Message(RADIO_UNLOADED) == RADIO_RUN_AWAY) {
-				if (*this == UNIT_HARVESTER && contact && contact->What_Am_I() == RTTI_BUILDING) {
+				if (*this == UNIT_HARVESTER && contact && contact->What_Am_I() == RTTI_BUILDING && *((BuildingClass*)contact) != STRUCT_REPAIR) {
 					Assign_Mission(MISSION_HARVEST);
 				} else if (!Target_Legal(NavCom)) {
 					Scatter(0, true);
@@ -2308,7 +2320,7 @@ int UnitClass::Tiberium_Check(CELL &center, int x, int y)
 	//using function for IsVisible so we have different results for different players - JAS 2019/09/30
 	if ((GameToPlay != GAME_NORMAL || (!IsOwnedByPlayer || Map[center].Is_Visible(PlayerPtr)))) {
 		if (!Map[center].Cell_Techno() && Map[center].Land_Type() == LAND_TIBERIUM) {
-			return(Map[center].OverlayData);
+			return(Map[center].OverlayData+1);
 		}
 	}
 	return(0);
@@ -2333,6 +2345,7 @@ bool UnitClass::Goto_Tiberium(void)
 				int tiberium = 0;
 				int besttiberium = 0;
 				for (int x = -radius; x <= radius; x++) {
+					cell = center;
 					tiberium = Tiberium_Check(cell, x, -radius);
 					if (tiberium > besttiberium) {
 						bestcell = cell;
@@ -2657,7 +2670,14 @@ int UnitClass::Mission_Harvest(void)
 		*/
 		case LOOKING:
 			IsHarvesting = false;
-			if (Goto_Tiberium()) {
+			/*
+			**	Slightly hacky; if TarCom is set then skip to finding home state.
+			*/
+			if (Target_Legal(TarCom)) {
+				Assign_Target(TARGET_NONE);
+				Status = FINDHOME;
+				return(1);
+			} else if (Goto_Tiberium()) {
 				IsHarvesting = true;
 				Set_Rate(2);
 				Set_Stage(0);
@@ -2853,7 +2873,7 @@ void UnitClass::Look(bool incremental)
 {
 	Validate();
 	//if (!IsInLimbo && IsOwnedByPlayer) {				// Changed for mapping of multiple players
-	if (!IsInLimbo && House && House->IsHuman) {
+	if (!IsInLimbo && House && (House->IsHuman || GameToPlay != GAME_NORMAL)) {
 		int sight = Class->SightRange;
 
 		if (sight) {

@@ -213,7 +213,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 
 		case RADIO_CAN_LOAD:
 			TechnoClass::Receive_Message(from, message, param);
-			if (BState == BSTATE_CONSTRUCTION || (!ScenarioInit && In_Radio_Contact())) return(RADIO_NEGATIVE);
+			if (BState == BSTATE_CONSTRUCTION || (!ScenarioInit && Class->Type != STRUCT_REFINERY && In_Radio_Contact())) return(RADIO_NEGATIVE);
 			switch (Class->Type) {
 				case STRUCT_AIRSTRIP:
 					if (from->What_Am_I() == RTTI_AIRCRAFT && *((AircraftClass const *)from) == AIRCRAFT_CARGO) {
@@ -238,7 +238,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 						*((UnitClass *)from) == UNIT_HARVESTER &&
 						(ScenarioInit || !Is_Something_Attached())) {
 
-						return(RADIO_ROGER);
+						return((Contact_With_Whom() != from) ? RADIO_ROGER : RADIO_NEGATIVE);
 					}
 					break;
 
@@ -1166,7 +1166,9 @@ void BuildingClass::AI(void)
 				Repair(1);
 			} else {
 				if (IsTickedOff && (int)Scenario > 2 && Random_Pick(0, 50) < (int)Scenario && !Trigger) {
-					Sell_Back(1);
+					if (GameToPlay != GAME_NORMAL || Scenario != 15 || PlayerPtr->ActLike != HOUSE_GOOD || *this != STRUCT_TEMPLE) {
+						Sell_Back(1);
+					}
 				}
 			}
 		}
@@ -2734,6 +2736,39 @@ bool BuildingClass::Limbo(void)
  * HISTORY:                                                                                    *
  *   12/24/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
+FireDataType BuildingClass::Fire_Data(int ) const
+{
+	Validate();
+	COORDINATE coord = Center_Coord();
+	int dist = 0;
+
+	/*
+	**	Make adjustments to the firing coordinate to account for turret
+	**	position. This depends on building type and turret facing.
+	*/
+	switch (Class->Type) {
+		default:
+		case STRUCT_GTOWER:
+		case STRUCT_ATOWER:
+			coord = Coord_Move(coord, DIR_N, 0x0030);
+			dist = 0x0040;
+			break;
+		case STRUCT_OBELISK:
+			coord = Coord_Move(coord, DIR_N, 0x00A8);
+			coord = Coord_Move(coord, DIR_W, 0x0018);
+			break;
+
+		case STRUCT_SAM:
+		case STRUCT_TURRET:
+			coord = Coord_Move(coord, DIR_N, 0x0030);
+			dist = 0x0080;
+			break;
+	}
+
+	return{coord,dist};
+}
+
+
 COORDINATE BuildingClass::Fire_Coord(int ) const
 {
 	Validate();
@@ -3519,8 +3554,14 @@ bool BuildingClass::Toggle_Primary(void)
 			}
 		}
 		IsLeader = true;
-		if (House == PlayerPtr) {
-			Speak(VOX_PRIMARY_SELECTED);
+		//
+		// MBL 07.22.2020 - Update so that each player in multiplayer will properly hear this when it applies to them
+		//
+		// if (House == PlayerPtr) {
+		// 	Speak(VOX_PRIMARY_SELECTED);
+		// }
+		if ((HouseClass *)House->IsHuman) {
+			Speak(VOX_PRIMARY_SELECTED, House);
 		}
 	}
 	Mark(MARK_CHANGE);
@@ -3832,14 +3873,14 @@ bool BuildingClass::Can_Demolish_Unit(void) const
 bool BuildingClass::Can_Capture(void) const
 {
 	bool can_capture = Class->IsCaptureable;
-	if (*this == STRUCT_EYE) {
-		// Don't allow the Advanced Comm Center to be capturable in skirmish, MP, or beyond scenario 13 in SP
-		if (GameToPlay == GAME_NORMAL) {
-			can_capture &= Scenario < 13;
-		} else {
-			can_capture = false;
+
+	// Override capturable state if this building has a capture win trigger
+	if (GameToPlay == GAME_NORMAL) {
+		if (Trigger != NULL && Trigger->Action == TriggerClass::ACTION_WINLOSE) {
+			can_capture = true;
 		}
 	}
+
 	return(can_capture);
 }
 
@@ -4093,11 +4134,18 @@ int BuildingClass::Mission_Deconstruction(void)
 					}
 				}
 
-				//Changed for multiplayer ST - 3/13/2019 5:31PM
-				if (Is_Owned_By_Player()) {
-				//if (IsOwnedByPlayer) {
+				// MBL 07.10.2020 - In 1v1, sometimes both players will hear this SFX, or neither player will hear it
+				// Making it so all players hear it positionally in the map; Per thread discussion in https://jaas.ea.com/browse/TDRA-7245
+				//
+				#if 0
+					//Changed for multiplayer ST - 3/13/2019 5:31PM
+					if (Is_Owned_By_Player()) {
+					//if (IsOwnedByPlayer) {
+						Sound_Effect(VOC_CASHTURN, Coord);
+					}
+				#else
 					Sound_Effect(VOC_CASHTURN, Coord);
-				}
+				#endif
 				
 				/*
 				**	Destroy all attached objects. ST - 4/24/2020 9:38PM
@@ -4557,6 +4605,11 @@ int BuildingClass::Mission_Repair(void)
 
 				if (Transmit_Message(RADIO_NEED_TO_MOVE) == RADIO_ROGER) {
 					if (Contact_With_Whom()->Health_Ratio() < 0x0100 && Transmit_Message(RADIO_REPAIR) == RADIO_ROGER) {
+
+						// MBL 07.06.2020 - Patch 3: Change to TD Legacy: Adding "Repairing" VO for units on repair bay
+						// Per https://jaas.ea.com/browse/TDRA-7271
+						if (IsOwnedByPlayer && House) Speak(VOX_REPAIRING, House);
+
 						Status = DURING;
 						Begin_Mode(BSTATE_ACTIVE);
 						IsReadyToCommence = false;

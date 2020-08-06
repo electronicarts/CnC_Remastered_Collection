@@ -61,7 +61,7 @@ class MapClass: public GScreenClass
 		CELL Pick_Random_Location(void) const;
 		int Intact_Bridge_Count(void) const;
 		bool Base_Region(CELL cell, HousesType & house, ZoneType & zone) const;
-		CELL Nearby_Location(CELL cell, SpeedType speed, int zone=-1, MZoneType check=MZONE_NORMAL, bool checkflagged=false) const;
+		CELL Nearby_Location(CELL cell, SpeedType speed, int zone=-1, MZoneType check=MZONE_NORMAL, bool checkflagged=false, int locationmod=0) const;
 		ObjectClass * Close_Object(COORDINATE coord) const;
 		virtual void Detach(ObjectClass * ) {};
 		int Cell_Region(CELL cell);

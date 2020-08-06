@@ -962,9 +962,17 @@ bool DriveClass::Start_Of_Move(void)
 				/*
 				**	If a basic path could be found, but the immediate move destination is
 				**	blocked by a friendly temporary blockage, then cause that blockage
-				**	to scatter.
+				**	to scatter. If the destination is also one cell away, then scatter
+				**	regardless of direction.
 				*/
-				CELL cell = Adjacent_Cell(Coord_Cell(Center_Coord()), PrimaryFacing.Current());
+				CELL ourcell = Coord_Cell(Center_Coord());
+				CELL navcell = As_Cell(NavCom);
+				CELL cell = -1;
+				if (::Distance(ourcell, navcell) < 2) {
+					cell = navcell;
+				} else {
+					cell = Adjacent_Cell(ourcell, PrimaryFacing.Current());
+				}
 				if (Map.In_Radar(cell)) {
 					if (Can_Enter_Cell(cell) == MOVE_TEMP) {
 						CellClass * cellptr = &Map[cell];

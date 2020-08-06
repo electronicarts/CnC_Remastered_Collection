@@ -70,6 +70,7 @@ class SpecialClass
 			IsEarlyWin = false;
 			HealthBarDisplayMode = HB_SELECTED;
 			ResourceBarDisplayMode = RB_SELECTED;
+			ModernBalance = false;
 		}
 
 		/*
@@ -254,11 +255,21 @@ class SpecialClass
 			RB_ALWAYS,
 		} ResourceBarDisplayMode;
 
+		/*
+		** New modern balance setting.
+		*/
+		unsigned ModernBalance:1;
 
 		/*
 		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
 		*/
-		unsigned char SaveLoadPadding[128];
+		// MBL 07.21.2020 - https://jaas.ea.com/browse/TDRA-7537
+		// Loading save files from Live and July Patch 3 Beta versions results in a crash
+		// Fixes issue from Change 738397 2020/07/17 14:06:03
+		// 
+		// unsigned char SaveLoadPadding[127];
+		//
+		unsigned char SaveLoadPadding[124]; 
 };
 
 

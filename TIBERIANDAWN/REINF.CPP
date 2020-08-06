@@ -338,6 +338,7 @@ bool Do_Reinforcements(TeamTypeClass *teamtype)
 		*/
 		case SOURCE_AIR: {
 			AircraftClass * thisone = (AircraftClass *)object;
+			TARGET target = TARGET_NONE;
 			while (thisone) {
 				AircraftClass * next = (AircraftClass *)thisone->Next;
 
@@ -345,25 +346,57 @@ bool Do_Reinforcements(TeamTypeClass *teamtype)
 				**	Find a suitable map entry location. Cargo planes will try to find a cell that
 				**	exactly lines up with the airfield they will unload at.
 				*/
-				CELL newcell;
+				COORDINATE newcoord;
+				long reinforcement_delay = -1;
 				ScenarioInit++;
-				newcell = Map.Calculated_Cell(HouseClass::As_Pointer(teamtype->House)->Edge, teamtype->House);
+				newcoord = Cell_Coord(Map.Calculated_Cell(HouseClass::As_Pointer(teamtype->House)->Edge, teamtype->House));
 				ScenarioInit--;
 				if (*thisone == AIRCRAFT_CARGO) {
 					BuildingClass const * building = thisone->Find_Docking_Bay(STRUCT_AIRSTRIP, false);
 					if (building) {
-						newcell = XY_Cell(Map.MapCellX+Map.MapCellWidth, Coord_YCell(building->Docking_Coord()+2));
+						COORDINATE docking_coord = building->Docking_Coord();
+						const int border_x = Cell_To_Lepton(Map.MapCellX + Map.MapCellWidth) | 0x80;
+						if (Special.ModernBalance) {
+							/*
+							** Cargo plane takes 5 seconds to reach the airstrip on Normal (1.5x legacy), or (75 / 10) seconds at speed.
+							** Assumes a 45ms (1000 / 45 ticks per second) service rate.
+							*/
+							const int speed = AircraftTypeClass::As_Reference(AIRCRAFT_CARGO).MaxSpeed;
+							int spawn_x = Coord_X(docking_coord) + ((speed * 1000 * 75) / (45 * 10));
+							if (spawn_x > border_x) {
+								reinforcement_delay = (spawn_x - border_x) / speed;
+								spawn_x = border_x;
+							}
+							newcoord = XY_Coord(spawn_x, Coord_Y(docking_coord));
+						} else {
+							newcoord = XY_Coord(border_x, Coord_Y(docking_coord));
+						}
+						if (teamtype->MissionCount) {
+							teamtype->MissionList[0].Argument = building->As_Target();
+						}
 					} 
 				}
 				thisone->Next = 0;
 
 				ScenarioInit++;
-				placed = thisone->Unlimbo(Cell_Coord(newcell), DIR_W);
+				placed = thisone->Unlimbo(newcoord, DIR_W);
+				if (Special.ModernBalance && reinforcement_delay >= 0) {
+					thisone->Set_Reinforcement_Delay(reinforcement_delay);
+				}
 				ScenarioInit--;
 				if (placed) {
 					if (!team) {
 						if (thisone->Class->IsFixedWing) {
 							thisone->Assign_Mission(MISSION_HUNT);
+							if (*thisone == AIRCRAFT_A10) {
+								/*
+								**	Groups of A10s always go after the same target initally.
+								*/
+								if (target == TARGET_NONE) {
+									target = thisone->Greatest_Threat(THREAT_NORMAL);
+								}
+								thisone->Assign_Target(target);
+							}
 						} else {
 							if (thisone->Class->IsTransporter && thisone->Is_Something_Attached()) {
 								thisone->Assign_Mission(MISSION_UNLOAD);

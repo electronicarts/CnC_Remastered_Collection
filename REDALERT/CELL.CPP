@@ -2807,9 +2807,18 @@ void CellClass::Flag_Create(void)
 {
 	if (!CTFFlag) {
 		CTFFlag = new AnimClass(ANIM_FLAG, Cell_Coord());
-		if (CTFFlag) {
-			CTFFlag->OwnerHouse = Owner;
+		if (CTFFlag == NULL) {
+			for (int i = 0; i < Anims.Count(); ++i) {
+				AnimClass* anim = Anims.Ptr(i);
+				if (*anim != ANIM_FLAG) {
+					delete anim;
+					break;
+				}
+			}
+			CTFFlag = new AnimClass(ANIM_FLAG, Cell_Coord());
 		}
+		assert(CTFFlag != NULL);
+		CTFFlag->OwnerHouse = Owner;
 	}
 }
 

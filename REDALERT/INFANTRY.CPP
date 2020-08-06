@@ -511,6 +511,9 @@ int InfantryClass::Shape_Number(WindowNumberType window) const
 	** The animation frame numbers may be different when rendering in legacy mode vs. exporting for render in GlyphX. ST - 9/5/2019 12:34PM
 	*/
 	const DoInfoStruct *do_controls = (window == WINDOW_VIRTUAL) ? Class->DoControlsVirtual : Class->DoControls;
+	if (window != WINDOW_VIRTUAL && !IsOwnedByPlayer && *this == INFANTRY_SPY) {
+		do_controls = InfantryTypeClass::As_Reference(INFANTRY_E1).DoControls;
+	}
 			
 	/*
 	**	The infantry shape is always modulo the number of animation frames
@@ -692,7 +695,7 @@ void InfantryClass::Per_Cell_Process(PCPType why)
 							
 								// If they're spying on a sub pen, give 'em a sonar pulse
 								if (build == STRUCT_SUB_PEN) {
-									House->SuperWeapon[SPC_SONAR_PULSE].Enable(true, true, false);
+									House->SuperWeapon[SPC_SONAR_PULSE].Enable(false, true, false);
 									// Add to Glyphx multiplayer sidebar. ST - 8/7/2019 10:13AM
 									if (Session.Type == GAME_GLYPHX_MULTIPLAYER) {
 										if (House->IsHuman) {
@@ -1480,7 +1483,7 @@ MoveType InfantryClass::Can_Enter_Cell(CELL cell, FacingType ) const
 					**	Cloaked enemy objects are not considered if this is a Find_Path()
 					**	call.
 					*/
-					if (!obj->Is_Techno() || ((TechnoClass *)obj)->Cloak != CLOAKED) {
+					if (!obj->Is_Techno() || !((TechnoClass *)obj)->Is_Cloaked(this)) {
 
 						/*
 						**	Any non-allied blockage is considered impassible if the infantry
@@ -3956,6 +3959,13 @@ void InfantryClass::Movement_AI(void)
 			if (Mission == MISSION_GUARD && MissionQueue == MISSION_NONE && Target_Legal(NavCom)) {
 				Assign_Destination(TARGET_NONE);
 //				if (IsTethered) Scatter(0, true);
+			}
+
+			/*
+			**	Scatter infantry off buildings in guard modes.
+			*/
+			if (!IsTethered && (Mission == MISSION_GUARD || Mission == MISSION_GUARD_AREA) && MissionQueue == MISSION_NONE && Map[Coord].Cell_Building() != NULL) {
+				Scatter(0, true, true);
 			}
 
 			/*

@@ -564,6 +564,7 @@ COORDINATE ObjectClass::Center_Coord(void) const {return Coord;};
 COORDINATE ObjectClass::Render_Coord(void) const {return(Center_Coord());}
 COORDINATE ObjectClass::Docking_Coord(void) const {return(Center_Coord());}
 COORDINATE ObjectClass::Sort_Y(void) const {return Coord;};
+FireDataType ObjectClass::Fire_Data(int which) const {return{Fire_Coord(which),0};}
 COORDINATE ObjectClass::Fire_Coord(int ) const {return Coord;};
 void ObjectClass::Record_The_Kill(TechnoClass * ) {};
 void ObjectClass::Do_Shimmer(void) {};

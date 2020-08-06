@@ -672,6 +672,7 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Set_Multiplayer_Data(int scena
 	Special.IsVisceroids = game_options.SpawnVisceroids;
 	Special.IsCaptureTheFlag = game_options.CaptureTheFlag;
 	Special.IsEarlyWin = game_options.DestroyStructures;
+	Special.ModernBalance = game_options.ModernBalance;
 
 	Rule.AllowSuperWeapons = game_options.EnableSuperweapons;	// Are superweapons available
 
@@ -1314,7 +1315,9 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Start_Custom_Instance(const ch
 
 	Clear_Scenario();
 
-	Read_Scenario_Ini_File(scenario_file_name, bin_file_name, scenario_name, true);
+	if (!Read_Scenario_Ini_File(scenario_file_name, bin_file_name, scenario_name, true)) {
+		return false;
+	}
 
 	HiddenPage.Clear();
 	VisiblePage.Clear();
@@ -1695,6 +1698,12 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Save_Load(bool save, const cha
 		}
 		
 		result = Load_Game(file_path_and_name);
+
+		// MBL 07.21.2020
+		if (result == false)
+		{
+			return false;
+		}
 
 		DLLExportClass::Set_Player_Context(DLLExportClass::GlyphxPlayerIDs[0], true);
 		Set_Logic_Page(SeenBuff);
@@ -2938,6 +2947,7 @@ void DLL_Draw_Line_Intercept(int x, int y, int x1, int y1, unsigned char color, 
 void DLLExportClass::DLL_Draw_Intercept(int shape_number, int x, int y, int width, int height, int flags, ObjectClass *object, const char *shape_file_name, char override_owner, int scale)
 {
 	CNCObjectStruct& new_object = ObjectList->Objects[TotalObjectCount + CurrentDrawCount];
+	memset(&new_object, 0, sizeof(new_object));
 	Convert_Type(object, new_object);
 	if (new_object.Type == UNKNOWN) {
 		return;
@@ -4012,6 +4022,8 @@ bool DLLExportClass::Get_Sidebar_State(uint64 player_id, unsigned char *buffer_i
 				if ((entry_index + 1) * sizeof(CNCSidebarEntryStruct) + memory_needed > buffer_size) {
 					return false;
 				}
+				
+				memset(&sidebar_entry, 0, sizeof(sidebar_entry));
 
 				sidebar_entry.AssetName[0] = 0;
 				sidebar_entry.Type = UNKNOWN;
@@ -4191,6 +4203,8 @@ bool DLLExportClass::Get_Sidebar_State(uint64 player_id, unsigned char *buffer_i
 						return false;
 					}
 
+					memset(&sidebar_entry, 0, sizeof(sidebar_entry));
+
 					sidebar_entry.AssetName[0] = 0;
 					sidebar_entry.Type = UNKNOWN;
 					sidebar_entry.BuildableID = context_sidebar->Column[c].Buildables[b].BuildableID;
@@ -4352,6 +4366,8 @@ bool DLLExportClass::Get_Sidebar_State(uint64 player_id, unsigned char *buffer_i
 }
 
 
+static const int _map_width_shift_bits = 6;
+
 void DLLExportClass::Calculate_Placement_Distances(BuildingTypeClass* placement_type, unsigned char* placement_distance)
 {
 	int map_cell_x = Map.MapCellX;
@@ -4380,7 +4396,7 @@ void DLLExportClass::Calculate_Placement_Distances(BuildingTypeClass* placement_
 	memset(placement_distance, 255U, MAP_CELL_TOTAL);
 	for (int y = 0; y < map_cell_height; y++) {
 		for (int x = 0; x < map_cell_width; x++) {
-			CELL cell = (CELL)map_cell_x + x + ((map_cell_y + y) << 6);
+			CELL cell = (CELL)map_cell_x + x + ((map_cell_y + y) << _map_width_shift_bits);
 			BuildingClass* base = (BuildingClass*)Map[cell].Cell_Find_Object(RTTI_BUILDING);
 			if ((base && base->House->Class->House == PlayerPtr->Class->House) || (Map[cell].Owner == PlayerPtr->Class->House)) {
 				placement_distance[cell] = 0U;
@@ -4471,7 +4487,7 @@ bool DLLExportClass::Get_Placement_State(uint64 player_id, unsigned char *buffer
 	for (int y=0 ; y < map_cell_height ; y++) {
 		for (int x=0 ; x < map_cell_width ; x++) {
 
-			CELL cell = (CELL) map_cell_x + x + ((map_cell_y + y) << 6);
+			CELL cell = (CELL) map_cell_x + x + ((map_cell_y + y) << _map_width_shift_bits);
 
 			bool pass = Passes_Proximity_Check(cell, PlacementType[CurrentLocalPlayerIndex], PlacementDistance[CurrentLocalPlayerIndex]);
 
@@ -5132,7 +5148,7 @@ Map.Passes_Proximity_Check
 				map_cell_height++;
 			}
 
-			CELL cell = (CELL) (map_cell_x + cell_x) + ( (map_cell_y + cell_y) << 6 );
+			CELL cell = (CELL) (map_cell_x + cell_x) + ( (map_cell_y + cell_y) << _map_width_shift_bits );
 
 			/*
 			** Call the place directly instead of queueing it, so we can evaluate the return code.
@@ -7504,9 +7520,17 @@ bool DLLExportClass::Save(FileClass & file)
 	}
 
 	/*
+	** Special case for Rule.AllowSuperWeapons - store negated value so it defaults to enabled
+	*/
+	bool not_allow_super_weapons = !Rule.AllowSuperWeapons;
+	if (file.Write(&not_allow_super_weapons, sizeof(not_allow_super_weapons)) != sizeof(not_allow_super_weapons)) {
+		return false;
+	}
+
+	/*
 	** Room for save game expansion
 	*/
-	unsigned char padding[4096];
+	unsigned char padding[4095];
 	memset(padding, 0, sizeof(padding));
 
 	if (file.Write(padding, sizeof(padding)) != sizeof(padding)) {
@@ -7621,7 +7645,16 @@ bool DLLExportClass::Load(FileClass & file)
 		return false;
 	}
 
-	unsigned char padding[4096];
+	/*
+	** Special case for Rule.AllowSuperWeapons - store negated value so it defaults to enabled
+	*/
+	bool not_allow_super_weapons = false;
+	if (file.Read(&not_allow_super_weapons, sizeof(not_allow_super_weapons)) != sizeof(not_allow_super_weapons)) {
+		return false;
+	}
+	Rule.AllowSuperWeapons = !not_allow_super_weapons;
+
+	unsigned char padding[4095];
 
 	if (file.Read(padding, sizeof(padding)) != sizeof(padding)) {
 		return false;

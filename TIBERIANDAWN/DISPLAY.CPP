@@ -1810,8 +1810,9 @@ bool DisplayClass::Map_Cell(CELL cell, HouseClass * house, bool and_for_allies)
 	/*
 	** Maybe also recurse to map for allies
 	*/
-	if (ShareAllyVisibility && and_for_allies && GameToPlay == GAME_GLYPHX_MULTIPLAYER) {
-		for (HousesType house_type = HOUSE_MULTI1; house_type < HOUSE_COUNT; house_type++) {
+	if (ShareAllyVisibility && and_for_allies) {
+		HousesType first_house = (GameToPlay == GAME_NORMAL) ? HOUSE_FIRST : HOUSE_MULTI1;
+		for (HousesType house_type = first_house; house_type < HOUSE_COUNT; house_type++) {
 			HouseClass *hptr = HouseClass::As_Pointer(house_type);
 			if (hptr && hptr->IsActive) {
 				if (hptr != house && house->Is_Ally(hptr)) {
@@ -3870,12 +3871,17 @@ void DisplayClass::Mouse_Left_Release(CELL cell, int x, int y, ObjectClass * obj
 				AllowVoice = true;
 				for (int index = 0; index < CurrentObject.Count(); index++) {
 					ObjectClass * tobject = CurrentObject[index];
+					ActionType action = ACTION_NONE;
 					if (object) {
-						tobject->Active_Click_With(tobject->What_Action(object), object);
+						action = tobject->What_Action(object);
+						tobject->Active_Click_With(action, object);
 					} else {
-						tobject->Active_Click_With(tobject->What_Action(cell), cell);
+						action = tobject->What_Action(cell);
+						tobject->Active_Click_With(action, cell);
 					}
-					AllowVoice = false;
+					if (action != ACTION_NONE) {
+						AllowVoice = false;
+					}
 				}
 				AllowVoice = true;
 

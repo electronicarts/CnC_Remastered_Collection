@@ -728,7 +728,7 @@ struct CNCMultiplayerOptionsStruct {
 	int MPlayerCount;						// # of human players in this game
 	int MPlayerBases;						// 1 = bases are on for this scenario
 	int MPlayerCredits;					// # credits everyone gets
-	int MPlayerTiberium;					// 1 = tiberium enabled for this scenario
+	int MPlayerTiberium;					// >0 = tiberium enabled for this scenario
 	int MPlayerGoodies;					// 1 = goodies enabled for this scenario
 	int MPlayerGhosts;					// 1 = houses with no players will still play
 	int MPlayerSolo;						// 1 = allows a single-player net game
@@ -740,6 +740,7 @@ struct CNCMultiplayerOptionsStruct {
 	bool MPlayerAftermathUnits;
 	bool CaptureTheFlag;
 	bool DestroyStructures;				// New early win condition via destroying all a player's structures
+	bool ModernBalance;
 };
 
 

@@ -172,6 +172,7 @@ class ObjectClass : public AbstractClass
 		virtual COORDINATE Center_Coord(void) const;
 		virtual COORDINATE Render_Coord(void) const;
 		virtual COORDINATE Sort_Y(void) const;
+		virtual FireDataType Fire_Data(int) const;
 		virtual COORDINATE Fire_Coord(int ) const;
 
 		/*
