@@ -2048,13 +2048,22 @@ void FootClass::Detach(TARGET target, bool all)
 	/*
 	**	Remove the target from the NavQueue list as well.
 	*/
+	int loop_count = 0;
 	for (int index = 0; index < ARRAY_SIZE(NavQueue); index++) {
 		if (NavQueue[index] == target) {
 			NavQueue[index] = TARGET_NONE;
 			if (index < ARRAY_SIZE(NavQueue)-1) {
 				memmove(&NavQueue[index], &NavQueue[index+1], ((ARRAY_SIZE(NavQueue)-index)-1) * sizeof(NavQueue[0]));
+				NavQueue[ARRAY_SIZE(NavQueue)-1] = TARGET_NONE;
 				index--;
 			}
+		}
+		/*
+		** Extra safety check
+		*/
+		loop_count++;
+		if (loop_count > ARRAY_SIZE(NavQueue)) {
+			break;
 		}
 	}
 

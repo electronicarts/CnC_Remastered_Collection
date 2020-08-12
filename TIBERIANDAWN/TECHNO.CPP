@@ -2426,7 +2426,7 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 		}
 #else
 		/*
-		** Now need to reveal for any player that is the target. ST - 3/13/2019 5:43PM
+		** Now need to reveal for any player (only humans in normal node) that is the target. ST - 3/13/2019 5:43PM
 		*/
 
 		ObjectClass *obj = As_Object(target);
@@ -2434,7 +2434,7 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 			HousesType tgt_owner = obj->Owner();
 
 			HouseClass *player = HouseClass::As_Pointer(tgt_owner);
-			if (player != nullptr) {
+			if (player != nullptr && (player->IsHuman || GameToPlay != GAME_NORMAL)) {
 				if ((!Is_Owned_By_Player(player) && !Is_Discovered_By_Player(player)) || !Map[Coord_Cell(Center_Coord())].Is_Mapped(House)) {
 					Map.Sight_From(player, Coord_Cell(Center_Coord()), 1, false);
 				}
