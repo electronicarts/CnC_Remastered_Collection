@@ -1,0 +1,536 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
+  <Import Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{397CEF00-8930-4EC8-B15F-F7CF7193FB22}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>MobiusEditor</RootNamespace>
+    <AssemblyName Condition="'$(Configuration)'=='Debug'">CnCTDRAMapEditorD</AssemblyName>
+    <AssemblyName Condition="'$(Configuration)'=='Release'">CnCTDRAMapEditor</AssemblyName>
+    <AssemblyName Condition="'$(Configuration)'=='Gold'">CnCTDRAMapEditor</AssemblyName>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;STEAMWORKS_WIN;STEAMWORKS_X64;DEVELOPER</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>7.3</LangVersion>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;STEAMWORKS_WIN;STEAMWORKS_X64;DEVELOPER</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>7.3</LangVersion>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Gold|AnyCPU'">
+    <OutputPath>bin\Gold\</OutputPath>
+    <DefineConstants>TRACE;STEAMWORKS_WIN;STEAMWORKS_X64</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Resources\GameIcon00.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controls\BasicSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\BasicSettings.Designer.cs">
+      <DependentUpon>BasicSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\BriefingSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\BriefingSettings.Designer.cs">
+      <DependentUpon>BriefingSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ImageTooltip.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\ImageTooltip.Designer.cs">
+      <DependentUpon>ImageTooltip.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MapPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MapPanel.Designer.cs">
+      <DependentUpon>MapPanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\MenuButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\MenuButton.Designer.cs">
+      <DependentUpon>MenuButton.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PropertiesComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\PropertiesComboBox.Designer.cs">
+      <DependentUpon>PropertiesComboBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TerrainProperties.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\TerrainProperties.Designer.cs">
+      <DependentUpon>TerrainProperties.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ObjectProperties.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\ObjectProperties.Designer.cs">
+      <DependentUpon>ObjectProperties.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\PlayerSettings.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\PlayerSettings.Designer.cs">
+      <DependentUpon>PlayerSettings.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\TypeComboBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Controls\TypeComboBox.Designer.cs">
+      <DependentUpon>TypeComboBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\ErrorMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ErrorMessageBox.Designer.cs">
+      <DependentUpon>ErrorMessageBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\InviteMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\InviteMessageBox.Designer.cs">
+      <DependentUpon>InviteMessageBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\MapSettingsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\MapSettingsDialog.Designer.cs">
+      <DependentUpon>MapSettingsDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\NewMapDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\NewMapDialog.Designer.cs">
+      <DependentUpon>NewMapDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\SteamDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\SteamDialog.Designer.cs">
+      <DependentUpon>SteamDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\TriggersDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\TriggersDialog.Designer.cs">
+      <DependentUpon>TriggersDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\TeamTypesDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\TeamTypesDialog.Designer.cs">
+      <DependentUpon>TeamTypesDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Event\RenderEventArgs.cs" />
+    <Compile Include="Event\UndoRedoEventArgs.cs" />
+    <Compile Include="Globals.cs" />
+    <Compile Include="Interface\IBrowsableType.cs" />
+    <Compile Include="Interface\ICellOccupier.cs" />
+    <Compile Include="Interface\ICellOverlapper.cs" />
+    <Compile Include="Interface\IGamePlugin.cs" />
+    <Compile Include="Interface\INamedType.cs" />
+    <Compile Include="Interface\ITechnoType.cs" />
+    <Compile Include="Interface\ITool.cs" />
+    <Compile Include="Interface\IWidget.cs" />
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Model\BasicSection.cs" />
+    <Compile Include="Model\BriefingSection.cs" />
+    <Compile Include="Model\Building.cs" />
+    <Compile Include="Model\CellGrid.cs" />
+    <Compile Include="Model\CellMetrics.cs" />
+    <Compile Include="Model\CellTrigger.cs" />
+    <Compile Include="Model\DirectionType.cs" />
+    <Compile Include="Model\House.cs" />
+    <Compile Include="Model\HouseType.cs" />
+    <Compile Include="Model\BuildingType.cs" />
+    <Compile Include="Model\Infantry.cs" />
+    <Compile Include="Model\Map.cs" />
+    <Compile Include="Model\MapSection.cs" />
+    <Compile Include="Model\OccupierSet.cs" />
+    <Compile Include="Model\OverlapperSet.cs" />
+    <Compile Include="Model\Overlay.cs" />
+    <Compile Include="Model\OverlayType.cs" />
+    <Compile Include="Model\Smudge.cs" />
+    <Compile Include="Model\SmudgeType.cs" />
+    <Compile Include="Model\SteamSection.cs" />
+    <Compile Include="Model\TeamType.cs" />
+    <Compile Include="Model\Template.cs" />
+    <Compile Include="Model\TemplateType.cs" />
+    <Compile Include="Model\Terrain.cs" />
+    <Compile Include="Model\TerrainType.cs" />
+    <Compile Include="Model\TheaterType.cs" />
+    <Compile Include="Model\Trigger.cs" />
+    <Compile Include="Model\InfantryType.cs" />
+    <Compile Include="Model\TypeItem.cs" />
+    <Compile Include="Model\Unit.cs" />
+    <Compile Include="Model\UnitType.cs" />
+    <Compile Include="Model\Waypoint.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RedAlert\ActionDataTypes.cs" />
+    <Compile Include="RedAlert\ActionTypes.cs" />
+    <Compile Include="RedAlert\BasicSection.cs" />
+    <Compile Include="RedAlert\BuildingTypes.cs" />
+    <Compile Include="RedAlert\Constants.cs" />
+    <Compile Include="RedAlert\DirectionTypes.cs" />
+    <Compile Include="RedAlert\EventTypes.cs" />
+    <Compile Include="RedAlert\GamePlugin.cs" />
+    <Compile Include="RedAlert\House.cs" />
+    <Compile Include="RedAlert\HouseTypes.cs" />
+    <Compile Include="RedAlert\InfantryTypes.cs" />
+    <Compile Include="RedAlert\MissionTypes.cs" />
+    <Compile Include="RedAlert\OverlayTypes.cs" />
+    <Compile Include="RedAlert\SmudgeTypes.cs" />
+    <Compile Include="RedAlert\TeamMissionTypes.cs" />
+    <Compile Include="RedAlert\TemplateTypes.cs" />
+    <Compile Include="RedAlert\TerrainTypes.cs" />
+    <Compile Include="RedAlert\TheaterTypes.cs" />
+    <Compile Include="RedAlert\UnitTypes.cs" />
+    <Compile Include="Render\MapRenderer.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamapplist.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamapps.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamclient.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamcontroller.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamfriends.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamgameserver.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamgameserverapps.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamgameserverclient.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamgameserverhttp.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamgameserverinventory.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamgameservernetworking.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamgameserverstats.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamgameserverugc.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamgameserverutils.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamhtmlsurface.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamhttp.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteaminput.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteaminventory.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteammatchmaking.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteammusic.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteammusicremote.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamnetworking.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamparentalsettings.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamremoteplay.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamremotestorage.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamscreenshots.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamugc.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamunifiedmessages.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamuser.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamuserstats.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamutils.cs" />
+    <Compile Include="Steamworks.NET\autogen\isteamvideo.cs" />
+    <Compile Include="Steamworks.NET\autogen\NativeMethods.cs" />
+    <Compile Include="Steamworks.NET\autogen\SteamCallbacks.cs" />
+    <Compile Include="Steamworks.NET\autogen\SteamConstants.cs" />
+    <Compile Include="Steamworks.NET\autogen\SteamEnums.cs" />
+    <Compile Include="Steamworks.NET\autogen\SteamStructs.cs" />
+    <Compile Include="Steamworks.NET\CallbackDispatcher.cs" />
+    <Compile Include="Steamworks.NET\CallbackIdentity.cs" />
+    <Compile Include="Steamworks.NET\InteropHelp.cs" />
+    <Compile Include="Steamworks.NET\ISteamMatchmakingResponses.cs" />
+    <Compile Include="Steamworks.NET\Packsize.cs" />
+    <Compile Include="Steamworks.NET\Steam.cs" />
+    <Compile Include="Steamworks.NET\types\MatchmakingTypes\gameserveritem_t.cs" />
+    <Compile Include="Steamworks.NET\types\MatchmakingTypes\servernetadr_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamClientPublic\CGameID.cs" />
+    <Compile Include="Steamworks.NET\types\SteamClientPublic\CSteamID.cs" />
+    <Compile Include="Steamworks.NET\types\SteamClientPublic\HAuthTicket.cs" />
+    <Compile Include="Steamworks.NET\types\SteamClient\SteamAPIWarningMessageHook_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamClient\SteamAPI_CheckCallbackRegistered_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamClient\SteamAPI_PostAPIResultInProcess_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamController\ControllerActionSetHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamController\ControllerAnalogActionHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamController\ControllerDigitalActionHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamController\ControllerHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamFriends\FriendsGroupID_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamHTMLSurface\HHTMLBrowser.cs" />
+    <Compile Include="Steamworks.NET\types\SteamHTTP\HTTPCookieContainerHandle.cs" />
+    <Compile Include="Steamworks.NET\types\SteamHTTP\HTTPRequestHandle.cs" />
+    <Compile Include="Steamworks.NET\types\SteamInput\InputActionSetHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamInput\InputAnalogActionHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamInput\InputDigitalActionHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamInput\InputHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamInventory\SteamInventoryResult_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamInventory\SteamInventoryUpdateHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamInventory\SteamItemDef_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamInventory\SteamItemInstanceID_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamMatchmaking\HServerListRequest.cs" />
+    <Compile Include="Steamworks.NET\types\SteamMatchmaking\HServerQuery.cs" />
+    <Compile Include="Steamworks.NET\types\SteamNetworking\SNetListenSocket_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamNetworking\SNetSocket_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamRemoteStorage\PublishedFileId_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamRemoteStorage\PublishedFileUpdateHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamRemoteStorage\UGCFileWriteStreamHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamRemoteStorage\UGCHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamScreenshots\ScreenshotHandle.cs" />
+    <Compile Include="Steamworks.NET\types\SteamTypes\AccountID_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamTypes\AppId_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamTypes\DepotId_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamTypes\ManifestId_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamTypes\PartyBeaconID_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamTypes\RTime32.cs" />
+    <Compile Include="Steamworks.NET\types\SteamTypes\SiteId_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamTypes\SteamAPICall_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamUGC\UGCQueryHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamUGC\UGCUpdateHandle_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamUnifiedMessages\ClientUnifiedMessageHandle.cs" />
+    <Compile Include="Steamworks.NET\types\SteamUserStats\SteamLeaderboardEntries_t.cs" />
+    <Compile Include="Steamworks.NET\types\SteamUserStats\SteamLeaderboard_t.cs" />
+    <Compile Include="Steamworks.NET\types\Steam_api_common\HSteamPipe.cs" />
+    <Compile Include="Steamworks.NET\types\Steam_api_common\HSteamUser.cs" />
+    <Compile Include="TiberianDawn\ActionTypes.cs" />
+    <Compile Include="TiberianDawn\BasicSection.cs" />
+    <Compile Include="TiberianDawn\Constants.cs" />
+    <Compile Include="TiberianDawn\DirectionTypes.cs" />
+    <Compile Include="TiberianDawn\EventTypes.cs" />
+    <Compile Include="TiberianDawn\GamePlugin.cs" />
+    <Compile Include="TiberianDawn\House.cs" />
+    <Compile Include="TiberianDawn\HouseTypes.cs" />
+    <Compile Include="TiberianDawn\BuildingTypes.cs" />
+    <Compile Include="TiberianDawn\MissionTypes.cs" />
+    <Compile Include="TiberianDawn\OverlayTypes.cs" />
+    <Compile Include="TiberianDawn\SmudgeTypes.cs" />
+    <Compile Include="TiberianDawn\TeamMissionTypes.cs" />
+    <Compile Include="TiberianDawn\TemplateTypes.cs" />
+    <Compile Include="TiberianDawn\TerrainTypes.cs" />
+    <Compile Include="TiberianDawn\TheaterTypes.cs" />
+    <Compile Include="TiberianDawn\InfantryTypes.cs" />
+    <Compile Include="TiberianDawn\UnitTypes.cs" />
+    <Compile Include="Tools\BuildingTool.cs" />
+    <Compile Include="Tools\Dialogs\ResourcesToolDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tools\Dialogs\ResourcesToolDialog.Designer.cs">
+      <DependentUpon>ResourcesToolDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\Dialogs\ObjectToolDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tools\Dialogs\ObjectToolDialog.Designer.cs">
+      <DependentUpon>ObjectToolDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\Dialogs\GenericToolDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tools\Dialogs\GenericToolDialog.Designer.cs">
+      <DependentUpon>GenericToolDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\Dialogs\TerrainToolDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tools\Dialogs\TerrainToolDialog.Designer.cs">
+      <DependentUpon>TerrainToolDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\Dialogs\TemplateToolDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tools\Dialogs\TemplateToolDialog.Designer.cs">
+      <DependentUpon>TemplateToolDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\Dialogs\CellTriggersToolDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tools\Dialogs\CellTriggersToolDialog.Designer.cs">
+      <DependentUpon>CellTriggersToolDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\Dialogs\WaypointsToolDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tools\Dialogs\WaypointsToolDialog.Designer.cs">
+      <DependentUpon>WaypointsToolDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Tools\InfantryTool.cs" />
+    <Compile Include="Tools\OverlaysTool.cs" />
+    <Compile Include="Tools\ResourcesTool.cs" />
+    <Compile Include="Tools\SmudgeTool.cs" />
+    <Compile Include="Tools\TemplateTool.cs" />
+    <Compile Include="Tools\TerrainTool.cs" />
+    <Compile Include="Tools\UnitTool.cs" />
+    <Compile Include="Tools\ViewTool.cs" />
+    <Compile Include="Tools\WallsTool.cs" />
+    <Compile Include="Tools\CellTriggersTool.cs" />
+    <Compile Include="Tools\WaypointsTool.cs" />
+    <Compile Include="Utility\CRC.cs" />
+    <Compile Include="Utility\ExtensionMethods.cs" />
+    <Compile Include="Utility\GameTextManager.cs" />
+    <Compile Include="Utility\INI.cs" />
+    <Compile Include="Utility\Megafile.cs" />
+    <Compile Include="Utility\MegafileBuilder.cs" />
+    <Compile Include="Utility\MegafileManager.cs" />
+    <Compile Include="Utility\MRU.cs" />
+    <Compile Include="Utility\PropertyTracker.cs" />
+    <Compile Include="Utility\SteamworksUGC.cs" />
+    <Compile Include="Utility\TeamColor.cs" />
+    <Compile Include="Utility\TeamColorManager.cs" />
+    <Compile Include="Utility\TextureManager.cs" />
+    <Compile Include="Utility\TGASharpLib.cs" />
+    <Compile Include="Utility\Tileset.cs" />
+    <Compile Include="Utility\TilesetManager.cs" />
+    <Compile Include="Utility\UndoRedoList.cs" />
+    <Compile Include="Utility\WWCompression.cs" />
+    <Compile Include="Widgets\NavigationWidget.cs" />
+    <EmbeddedResource Include="Controls\BasicSettings.resx">
+      <DependentUpon>BasicSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\BriefingSettings.resx">
+      <DependentUpon>BriefingSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\MapPanel.resx">
+      <DependentUpon>MapPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\TerrainProperties.resx">
+      <DependentUpon>TerrainProperties.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\ObjectProperties.resx">
+      <DependentUpon>ObjectProperties.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\PlayerSettings.resx">
+      <DependentUpon>PlayerSettings.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ErrorMessageBox.resx">
+      <DependentUpon>ErrorMessageBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\InviteMessageBox.resx">
+      <DependentUpon>InviteMessageBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\MapSettingsDialog.resx">
+      <DependentUpon>MapSettingsDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\NewMapDialog.resx">
+      <DependentUpon>NewMapDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\SteamDialog.resx">
+      <DependentUpon>SteamDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\TriggersDialog.resx">
+      <DependentUpon>TriggersDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\TeamTypesDialog.resx">
+      <DependentUpon>TeamTypesDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="Tools\Dialogs\ResourcesToolDialog.resx">
+      <DependentUpon>ResourcesToolDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Tools\Dialogs\ObjectToolDialog.resx">
+      <DependentUpon>ObjectToolDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Tools\Dialogs\GenericToolDialog.resx">
+      <DependentUpon>GenericToolDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Tools\Dialogs\TerrainToolDialog.resx">
+      <DependentUpon>TerrainToolDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Tools\Dialogs\TemplateToolDialog.resx">
+      <DependentUpon>TemplateToolDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Tools\Dialogs\CellTriggersToolDialog.resx">
+      <DependentUpon>CellTriggersToolDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Tools\Dialogs\WaypointsToolDialog.resx">
+      <DependentUpon>WaypointsToolDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\GameIcon00.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\UI_CustomMissionPreviewDefault.png" />
+    <Content Include="Steamworks.NET\redist\steam_api.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>12.0.3</Version>
+    </PackageReference>
+    <PackageReference Include="Pfim">
+      <Version>0.9.1</Version>
+    </PackageReference>
+    <PackageReference Include="System.ValueTuple">
+      <Version>4.5.0</Version>
+    </PackageReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  </Project>
