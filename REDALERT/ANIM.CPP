@@ -262,6 +262,8 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window) const
 			void const * remap = NULL;
 			ShapeFlags_Type flags = SHAPE_CENTER|SHAPE_WIN_REL;
 			bool alt = false;
+			int width = 0;
+			int height = 0;
 
 			/*
 			**	Some animations require special fixups.
@@ -276,6 +278,12 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window) const
 					y += (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile);
 					transtable = Map.UnitShadow;
 					alt = true;
+					break;
+
+				case ANIM_BEACON_VIRTUAL:
+					width = 29;
+					height = 39;
+					flags = flags | SHAPE_BOTTOM | SHAPE_COMPACT;
 					break;
 			}
 
@@ -305,7 +313,7 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window) const
 			*/
 			if ((window == WINDOW_VIRTUAL) || (Fetch_Stage() < Class->Stages)) {
 				// Add 'this' parameter to call new shape draw intercept. ST - 5/22/2019
-				CC_Draw_Shape(this, shapefile, shapenum, x, y, window, flags, remap, transtable, DIR_N, Class->VirtualScale);
+				CC_Draw_Shape(this, shapefile, shapenum, x, y, window, flags, remap, transtable, DIR_N, Class->VirtualScale, width, height);
 			}
 		}
 		IsTheaterShape = false;
@@ -553,7 +561,8 @@ AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay
 	IsInvisible(false),
 	Delay(timedelay),
 	Accum(0),
-	AttachLayer(LAYER_NONE)
+	AttachLayer(LAYER_NONE),
+	KillTime(0ULL)
 {
 #ifdef VIC
 	if (Class->Stages == -1) {
@@ -737,6 +746,19 @@ void AnimClass::AI(void)
 	if (Class->Type >= ANIM_CORPSE1 && Class->Type <= ANIM_CORPSE3) {
 		LandType land = Map[Center_Coord()].Land_Type();
 		if (land == LAND_ROCK || land == LAND_WATER || land == LAND_RIVER) {
+			IsToDelete = true;
+		}
+	}
+
+	/*
+	**	Check the kill time.
+	*/
+	if (KillTime > 0ULL) {
+		FILETIME ft;
+		GetSystemTimeAsFileTime(&ft);
+
+		unsigned long long now = (unsigned long long)ft.dwLowDateTime + ((unsigned long long)ft.dwHighDateTime << 32ULL);
+		if (now >= KillTime) {
 			IsToDelete = true;
 		}
 	}
@@ -1255,4 +1277,20 @@ void AnimClass::Do_Atom_Damage(HousesType ownerhouse, CELL cell)
 		//GamePalette.Set(FADE_PALETTE_SLOW, Call_Back);	//TO_FIX. ST 5/8/2019
 	}
 #endif
+}
+
+void AnimClass::Set_Owner(HousesType owner)
+{
+	OwnerHouse = owner;
+	if (Target_Legal(VirtualAnimTarget)) {
+		As_Animation(VirtualAnimTarget)->Set_Owner(owner);
+	}
+}
+
+void AnimClass::Set_Visible_Flags(unsigned flags)
+{
+	VisibleFlags = flags;
+	if (Target_Legal(VirtualAnimTarget)) {
+		As_Animation(VirtualAnimTarget)->Set_Visible_Flags(flags);
+	}
 }

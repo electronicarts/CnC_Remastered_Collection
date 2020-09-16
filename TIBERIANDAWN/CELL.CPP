@@ -389,7 +389,9 @@ void CellClass::Redraw_Objects(bool forced)
 		if (Cell_Occupier()) {
 			ObjectClass * optr = Cell_Occupier();
 			while (optr) {
-				optr->Mark(MARK_CHANGE);
+				if (optr->IsActive) {
+					optr->Mark(MARK_CHANGE);
+				}
 				optr = optr->Next;
 			}
 		}
@@ -2448,7 +2450,7 @@ void CellClass::Flag_Create(void)
 			CTFFlag = new AnimClass(ANIM_FLAG, Cell_Coord(), 0, 1, true);
 		}
 		assert(CTFFlag != NULL);
-		CTFFlag->OwnerHouse = Owner;
+		CTFFlag->Set_Owner(Owner);
 	}
 }
 

@@ -63,14 +63,16 @@ class AnimClass : public ObjectClass, private StageClass {
 		void  Sort_Above(TARGET target);
 		void  Make_Invisible(void) {IsInvisible = true;};
 		void  Make_Visible(void) {IsInvisible = false;};
+		void  Kill_At(unsigned long long kill_time) {KillTime = kill_time;}
 
 		/*
 		** 2019/09/19 JAS
 		** Added functions for accessing which players can see this anim
 		*/
-		void Set_Visible_Flags(unsigned flags) { VisibleFlags = flags; }
+		void Set_Visible_Flags(unsigned flags);
 		unsigned Get_Visible_Flags() const { return (Delay == 0) ? VisibleFlags : 0; }
 
+		virtual void Set_Owner(HousesType owner);
 		virtual bool Can_Place_Here(COORDINATE ) const {return true;}
 		virtual bool Mark(MarkType mark=MARK_CHANGE);
 		virtual bool Render(bool forced);
@@ -195,9 +197,14 @@ class AnimClass : public ObjectClass, private StageClass {
 		AnimClass * VirtualAnim;
 
 		/*
+		**	Real-time point to kill this animation.
+		*/
+		unsigned long long KillTime;
+
+		/*
 		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
 		*/
-		unsigned char SaveLoadPadding[32];
+		unsigned char SaveLoadPadding[24];
 };
 
 

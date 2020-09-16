@@ -677,6 +677,10 @@ void InfantryClass::Per_Cell_Process(bool center)
 	*/
 	if (center && Mission == MISSION_CAPTURE) {
 		TechnoClass * tech = cellptr->Cell_Techno();
+		if (tech && tech->As_Target() == NavCom && tech->What_Am_I() == RTTI_BUILDING && !tech->Can_Capture()) {
+			tech = NULL;
+			Assign_Destination(TARGET_NONE);
+		}
 		if (tech && tech->As_Target() == NavCom) {
 			tech->Captured(House);
 			Delete_This();

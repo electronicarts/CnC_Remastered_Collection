@@ -473,7 +473,7 @@ void BulletClass::AI(void)
 					//
 					if (newanim && Class->Explosion == ANIM_ATOM_BLAST && newanim->OwnerHouse == HOUSE_NONE) {
 						if (Payback && Payback->House && Payback->House->Class) {
-							newanim->OwnerHouse = Payback->House->Class->House;
+							newanim->Set_Owner(Payback->House->Class->House);
 						}
 					}
 				}

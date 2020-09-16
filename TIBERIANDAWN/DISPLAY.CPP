@@ -1107,7 +1107,7 @@ void DisplayClass::Cursor_Mark(CELL pos, bool on)
 	CELL const *ptr;
 	CellClass *cellptr;
 
-	if (pos == -1) return;
+	if ((unsigned)pos >= MAP_CELL_TOTAL) return;
 
 	/*
 	**	For every cell in the CursorSize list, invoke its Redraw_Objects and
@@ -2965,6 +2965,7 @@ void DisplayClass::Select_These(COORDINATE coord1, COORDINATE coord2, bool addit
 		*/
 		if (	obj->Class_Of().IsSelectable &&
 				obj->What_Am_I() != RTTI_BUILDING &&
+				(!obj->Is_Techno() || !((TechnoClass*)obj)->Is_Cloaked(PlayerPtr)) &&
 				x >= x1 && x <= x2 && y >= y1 && y <= y2) {
 			bool old_allow_voice = AllowVoice;
 			bool is_player_controlled = obj->Owner() == PlayerPtr->Class->House;
@@ -2992,6 +2993,7 @@ void DisplayClass::Select_These(COORDINATE coord1, COORDINATE coord2, bool addit
 		**	selected, and are within the bounding box.
 		*/
 		if (	aircraft->Class_Of().IsSelectable &&
+				!aircraft->Is_Cloaked(PlayerPtr) &&
 				!aircraft->Is_Selected_By_Player() &&
 				x >= x1 && x <= x2 && y >= y1 && y <= y2) {
 			bool old_allow_voice = AllowVoice;

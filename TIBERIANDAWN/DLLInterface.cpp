@@ -140,6 +140,7 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Sidebar_Request(Sidebar
 extern "C" __declspec(dllexport) void __cdecl CNC_Handle_SuperWeapon_Request(SuperWeaponRequestEnum request_type, uint64 player_id, int buildable_type, int buildable_id, int x1, int y1);
 extern "C" __declspec(dllexport) void __cdecl CNC_Handle_ControlGroup_Request(ControlGroupRequestEnum request_type, uint64 player_id, unsigned char control_group_index);
 extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Debug_Request(DebugRequestEnum debug_request_type, uint64 player_id, const char *object_name, int x, int y, bool unshroud, bool enemy);
+extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Beacon_Request(BeaconRequestEnum beacon_request_type, uint64 player_id, int pixel_x, int pixel_y);
 extern "C" __declspec(dllexport) bool __cdecl CNC_Set_Multiplayer_Data(int scenario_index, CNCMultiplayerOptionsStruct &game_options, int num_players, CNCPlayerInfoStruct *player_list, int max_players);
 extern "C" __declspec(dllexport) bool __cdecl CNC_Clear_Object_Selection(uint64 player_id);
 extern "C" __declspec(dllexport) bool __cdecl CNC_Select_Object(uint64 player_id, int object_type_id, int object_to_select_id);
@@ -148,7 +149,7 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Set_Difficulty(int difficulty)
 extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Player_Switch_To_AI(uint64 player_id);
 extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Human_Team_Wins(uint64 player_id);
 extern "C" __declspec(dllexport) void __cdecl CNC_Start_Mission_Timer(int time);
-
+extern "C" __declspec(dllexport) bool __cdecl CNC_Get_Start_Game_Info(uint64 player_id, int &start_location_waypoint_index);
 
 
 /*
@@ -390,14 +391,13 @@ void Play_Movie_GlyphX(const char * movie_name, ThemeType theme)
 
 void On_Sound_Effect(int sound_index, int variation, COORDINATE coord)
 {
-	// MBL 02.26.2019
 	int voc = sound_index;
 	if (voc == VOC_NONE)
 	{
 		return;
 	}
 
-	// MBL 02.26.2019 - Borrowed from AUDIO.CPP Sound_Effect()
+	// Borrowed from AUDIO.CPP Sound_Effect()
 	//
 	#if 1 
 		char const * ext = ""; // ".AUD";
@@ -425,16 +425,12 @@ void On_Sound_Effect(int sound_index, int variation, COORDINATE coord)
 			}
 		}
 	#endif
-	// END MBL 
 
 	DLLExportClass::On_Sound_Effect(PlayerPtr, sound_index, ext, variation, coord);
 }
 
-// MBL 02.06.2020
-// void On_Speech(int speech_index)
 void On_Speech(int speech_index, HouseClass *house)
 {
-	// DLLExportClass::On_Speech(PlayerPtr, speech_index); // MBL 02.06.2020
 	if (house == NULL) {
 		DLLExportClass::On_Speech(PlayerPtr, speech_index);
 	}
@@ -504,7 +500,6 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Init(const char *command_line,
 	
 	DLL_Startup(command_line);
 
-	// MBL 
 	DLLExportClass::Set_Event_Callback( event_callback );
 
 	DLLExportClass::Init();
@@ -879,7 +874,7 @@ void GlyphX_Assign_Houses(void)
 					preassigned = true;
 				}
 			}
-			if (!preassigned) {
+			if (!preassigned && i < MAX_PLAYERS) {
 				random_start_locations[num_random_start_locations] = num_start_locations;
 				num_random_start_locations++;
 			}
@@ -1334,6 +1329,10 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Start_Custom_Instance(const ch
 
 	GlyphXClientSidebarWidthInLeptons = 0;
 
+	Play_Movie(IntroMovie);
+	Play_Movie(BriefMovie);
+	Play_Movie(ActionMovie, TransitTheme);
+
 	/*
 	if (!Start_Scenario(ScenarioName)) {
 		return(false);
@@ -1701,13 +1700,13 @@ extern "C" __declspec(dllexport) bool __cdecl CNC_Save_Load(bool save, const cha
 		
 		result = Load_Game(file_path_and_name);
 
-		// MBL 07.21.2020
 		if (result == false)
 		{
 			return false;
 		}
 
 		DLLExportClass::Set_Player_Context(DLLExportClass::GlyphxPlayerIDs[0], true);
+		DLLExportClass::Cancel_Placement(DLLExportClass::GlyphxPlayerIDs[0], -1, -1);
 		Set_Logic_Page(SeenBuff);
 		VisiblePage.Clear();
 		Map.Flag_To_Redraw(true);
@@ -1856,6 +1855,24 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Human_Team_Wins(uint64 
 extern "C" __declspec(dllexport) void __cdecl CNC_Start_Mission_Timer(int time)
 {
 	//Only implemented in Red Alert.
+}
+
+
+
+/**************************************************************************************************
+* CNC_Get_Start_Game_Info
+*
+* History: 8/31/2020 11:37AM - ST
+**************************************************************************************************/
+extern "C" __declspec(dllexport) bool __cdecl CNC_Get_Start_Game_Info(uint64 player_id, int &start_location_waypoint_index)
+{
+	start_location_waypoint_index = 0;
+	if (!DLLExportClass::Set_Player_Context(player_id)) {
+		return false;
+	}
+	
+	start_location_waypoint_index = PlayerPtr->StartLocationOverride;
+	return true;
 }
 
 
@@ -3682,6 +3699,31 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Input(InputRequestEnum 
 			break;
 		}
 		  		  
+		// MBL 09.08.2020 - Mod Support
+		case INPUT_REQUEST_MOD_GAME_COMMAND_1_AT_POSITION:
+		case INPUT_REQUEST_MOD_GAME_COMMAND_2_AT_POSITION:
+		case INPUT_REQUEST_MOD_GAME_COMMAND_3_AT_POSITION:
+		case INPUT_REQUEST_MOD_GAME_COMMAND_4_AT_POSITION:
+		{
+			DLLExportClass::Adjust_Internal_View();
+			DLLForceMouseX = x1;
+			DLLForceMouseY = y1;
+			_Kbd->MouseQX = x1;
+			_Kbd->MouseQY = y1;
+
+			COORDINATE coord = Map.Pixel_To_Coord(x1, y1);
+			CELL cell = Coord_Cell(coord);
+
+			if (Map.Pixel_To_Coord(x1, y1))
+			{
+				// TBD: For our ever-awesome Community Modders!
+				//
+				// PlayerPtr->Handle_Mod_Game_Command(cell, input_event - INPUT_REQUEST_MOD_GAME_COMMAND_1_AT_POSITION);
+			}
+
+			break;
+		}
+		  		  
 		default:
 			break;
 	}
@@ -3806,7 +3848,7 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Sidebar_Request(Sidebar
 	
 	switch (request_type) {
 		
-		// MBL 06.02.2020 - Changing right-click support for first put building on hold, and then subsequenct right-clicks to decrement that queue count for 1x or 5x; Then, 1x or 5x Left click will resume from hold
+		// Changing right-click support for first put building on hold, and then subsequenct right-clicks to decrement that queue count for 1x or 5x; Then, 1x or 5x Left click will resume from hold
 		// Handle and fall through to start construction (from hold state) below
 		case SIDEBAR_REQUEST_START_CONSTRUCTION_MULTI:
 
@@ -6849,6 +6891,39 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Debug_Request(DebugRequ
 
 	
 }			  
+
+
+extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Beacon_Request(BeaconRequestEnum beacon_request_type, uint64 player_id, int pixel_x, int pixel_y)
+{
+	if (!DLLExportClass::Set_Player_Context(player_id)) {
+		return;
+	}
+
+	// Beacons are only available if legacy rendering is disabled
+	if (DLLExportClass::Legacy_Render_Enabled()) {
+		return;
+	}
+
+	// Only allow one beacon per player
+	for (int index = 0; index < Anims.Count(); ++index) {
+		AnimClass* anim = Anims.Ptr(index);
+		if (anim != NULL &&
+			(*anim == ANIM_BEACON || *anim == ANIM_BEACON_VIRTUAL) &&
+			anim->OwnerHouse == PlayerPtr->Class->House) {
+			delete anim;
+		}
+	}
+
+	OutList.Add(EventClass(ANIM_BEACON, PlayerPtr->Class->House, Map.Pixel_To_Coord(pixel_x, pixel_y), PlayerPtr->Get_Allies()));
+
+	// Send sound effect to allies
+	for (int index = 0; index < Houses.Count(); ++index) {
+		HouseClass* hptr = Houses.Ptr(index);
+		if (hptr != NULL && hptr->IsActive && hptr->IsHuman && PlayerPtr->Is_Ally(hptr)) {
+			DLLExportClass::On_Sound_Effect(hptr, VOC_BEACON, "", 0, 0);
+		}
+	}
+}
 
 
 /**************************************************************************************************

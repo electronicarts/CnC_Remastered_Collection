@@ -1409,7 +1409,7 @@ bool RadarClass::Jam_Cell(CELL cell, HouseClass * house/*KO, bool shadeit*/)
 		
 		for (int i = 0; i < Session.Players.Count(); i++) {
 			HouseClass *player_house = HouseClass::As_Pointer(Session.Players[i]->Player.ID);
-			if (player_house->IsHuman && player_house != house) {
+			if (player_house->IsHuman && player_house != house && !house->Is_Ally(player_house)) {
 				Shroud_Cell(cell, player_house);
 			}
 		}

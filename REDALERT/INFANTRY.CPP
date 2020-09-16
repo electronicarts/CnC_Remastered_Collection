@@ -622,8 +622,14 @@ void InfantryClass::Per_Cell_Process(PCPType why)
 		*/
 		if (Mission == MISSION_CAPTURE) {
 			TechnoClass * tech = cellptr->Cell_Building();
-
-			if (tech == NULL) tech = cellptr->Cell_Techno();
+			if (tech != NULL) {
+				if ((tech->As_Target() == NavCom || tech->As_Target() == TarCom) && !tech->Can_Capture()) {
+					tech = NULL;
+					Assign_Destination(TARGET_NONE);
+				}
+			} else {
+				tech = cellptr->Cell_Techno();
+			}
 			if (tech != NULL && (tech->As_Target() == NavCom || tech->As_Target() == TarCom)) {
 				if (*this == INFANTRY_RENOVATOR) {
 
@@ -638,11 +644,14 @@ void InfantryClass::Per_Cell_Process(PCPType why)
 #else
 					if (tech->House->Is_Ally(House)) {
 #endif
+						if (tech->Trigger.Is_Valid()) {
+							tech->Trigger->Spring(TEVENT_PLAYER_ENTERED, this);
+						}
 						tech->Renovate();
 					} else {
 						bool iscapturable = false;
 						if (tech->What_Am_I() == RTTI_BUILDING) {
-							iscapturable = ((BuildingClass *)tech)->Class->IsCaptureable;
+							iscapturable = tech->Can_Capture();
 						}
 #ifdef FIXIT_ENGINEER	//	checked - ajw 9/28/98
 						if (tech->Health_Ratio() <= EngineerCaptureLevel && iscapturable) {
@@ -1207,7 +1216,7 @@ void InfantryClass::Assign_Target(TARGET target)
 	*/
 	if (!Target_Legal(NavCom) && Class->IsCapture && !Is_Weapon_Equipped()) {
 		BuildingClass const * building = As_Building(target);
-		if (building != NULL && building->Class->IsCaptureable) {
+		if (building != NULL && building->Can_Capture()) {
 			Assign_Destination(target);
 		}
 	}
@@ -2918,7 +2927,7 @@ ActionType InfantryClass::What_Action(ObjectClass const * object) const
 				return(ACTION_GREPAIR);
 			} else {
 
-				if (bldg->Class->IsCaptureable) {
+				if (bldg->Can_Capture()) {
 #ifdef FIXIT_ENGINEER	//	checked - ajw 9/28/98
 					if (bldg->Health_Ratio() <= EngineerCaptureLevel) {
 #else
@@ -2929,7 +2938,7 @@ ActionType InfantryClass::What_Action(ObjectClass const * object) const
 					return(ACTION_DAMAGE);
 				}
 
-//				if (bldg->Health_Ratio() <= Rule.ConditionRed && bldg->Class->IsCaptureable) {
+//				if (bldg->Health_Ratio() <= Rule.ConditionRed && bldg->Can_Capture()) {
 			}
 		}
 	}
@@ -3050,7 +3059,7 @@ ActionType InfantryClass::What_Action(ObjectClass const * object) const
 	if (Class->IsCapture && action == ACTION_ATTACK) {
 		if (!House->Is_Ally(object) && (
 //Disable capturing of helicopters			 (object->What_Am_I() == RTTI_AIRCRAFT && ((AircraftClass *)object)->Pip_Count() == 0 && *((AircraftClass *)object) == AIRCRAFT_TRANSPORT) ||
-			 (object->What_Am_I() == RTTI_BUILDING && ((BuildingClass *)object)->Class->IsCaptureable) )
+			 (object->What_Am_I() == RTTI_BUILDING && object->Can_Capture()) )
 			) {
 
 				if (*this == INFANTRY_THIEF && (object->What_Am_I() == RTTI_BUILDING && ((BuildingClass *)object)->Class->Capacity == 0)) {
@@ -3284,7 +3293,7 @@ int InfantryClass::Mission_Attack(void)
 		return(1);
 	}
 
-	if (Class->IsCapture && As_Building(TarCom) != NULL && As_Building(TarCom)->Class->IsCaptureable) {
+	if (Class->IsCapture && As_Building(TarCom) != NULL && As_Building(TarCom)->Can_Capture()) {
 		Assign_Destination(TarCom);
 		Assign_Mission(MISSION_CAPTURE);
 		return(1);
@@ -3914,7 +3923,7 @@ void InfantryClass::Doing_AI(void)
 						}
 					}
 					if (anim != NULL) {
-						anim->OwnerHouse = House->Class->House;
+						anim->Set_Owner(House->Class->House);
 					}
 					delete this;
 					return;

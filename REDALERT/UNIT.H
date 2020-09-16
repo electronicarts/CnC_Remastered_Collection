@@ -112,9 +112,14 @@ class UnitClass :	public DriveClass
 		FacingClass SecondaryFacing;
 
 		/*
+		**	This is the refinery a harvester is interested in unloading at.
+		*/
+		TARGET TiberiumUnloadRefinery;
+
+		/*
 		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
 		*/
-		unsigned char SaveLoadPadding[32];
+		unsigned char SaveLoadPadding[28];
 
 		/*---------------------------------------------------------------------
 		**	Constructors, Destructors, and overloaded operators.
@@ -145,6 +150,9 @@ class UnitClass :	public DriveClass
 		void APC_Close_Door(void);
 		void APC_Open_Door(void);
 
+		unsigned int Apply_Temporary_Jamming_Shroud(HouseClass *house_to_apply_for);
+		void Unapply_Temporary_Jamming_Shroud(HouseClass *house_to_unapply_for, unsigned int shroud_bits_applied);
+
 		/*
 		**	Query functions.
 		*/
@@ -158,6 +166,8 @@ class UnitClass :	public DriveClass
 		virtual bool Ok_To_Move(DirType facing) const;
 		virtual FireErrorType Can_Fire(TARGET target, int which) const;
 		virtual fixed Tiberium_Load(void) const;
+		virtual BuildingClass* Tiberium_Unload_Refinery(void) const;
+		virtual BuildingClass* Find_Best_Refinery(void) const;
 
 		/*
 		**	Coordinate inquiry functions. These are used for both display and

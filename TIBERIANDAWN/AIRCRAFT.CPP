@@ -2368,6 +2368,11 @@ int AircraftClass::Mission_Attack(void)
 				return(1);
 			}
 
+			/*
+			**	Clear second shot flag so fire burst works correctly.
+			*/
+			IsSecondShot = false;
+
 			PrimaryFacing.Set_Desired(Direction(TarCom));
 			SecondaryFacing.Set_Desired(Direction(TarCom));
 			switch (Can_Fire(TarCom, 0)) {

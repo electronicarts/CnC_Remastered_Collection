@@ -249,6 +249,8 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window)
 			int shapenum = Class->Start + Fetch_Stage();
 			void const * remap = NULL;
 			ShapeFlags_Type flags = SHAPE_CENTER|SHAPE_WIN_REL;
+			int width = 0;
+			int height = 0;
 
 			/*
 			**	Some animations require special fixups.
@@ -275,6 +277,12 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window)
 					x += (ICON_PIXEL_W / 2) - 2;
 					y += (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile);
 					transtable = Map.UnitShadow;
+					break;
+
+				case ANIM_BEACON_VIRTUAL:
+					width = 29;
+					height = 39;
+					flags = flags | SHAPE_BOTTOM | SHAPE_COMPACT;
 					break;
 			}
 
@@ -303,7 +311,7 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window)
 			**	Draw the animation shape, but ignore legacy if beyond normal stage count.
 			*/
 			if ((window == WINDOW_VIRTUAL) || (Fetch_Stage() < Class->Stages)) {
-				CC_Draw_Shape(this, shapefile, shapenum, x, y, window, flags, remap, transtable, Class->VirtualScale);
+				CC_Draw_Shape(this, shapefile, shapenum, x, y, window, flags, remap, transtable, Class->VirtualScale, width, height);
 			}
 		}
 	}
@@ -571,6 +579,7 @@ AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay
 	Object = 0;
 	SortTarget = TARGET_NONE;
 	OwnerHouse = HOUSE_NONE;
+	KillTime = 0ULL;
 
 	if (Class->Stages == -1) {
 		((int&)Class->Stages) = Get_Build_Frame_Count(Class->Get_Image_Data());
@@ -730,6 +739,19 @@ void AnimClass::AI(void)
 	*/
 	if (Class->Type == ANIM_LZ_SMOKE && Map[Coord_Cell(Center_Coord())].Cell_Building()) {
 		IsToDelete = true;
+	}
+
+	/*
+	**	Check the kill time.
+	*/
+	if (KillTime > 0ULL) {
+		FILETIME ft;
+		GetSystemTimeAsFileTime(&ft);
+
+		unsigned long long now = (unsigned long long)ft.dwLowDateTime + ((unsigned long long)ft.dwHighDateTime << 32ULL);
+		if (now >= KillTime) {
+			IsToDelete = true;
+		}
 	}
 
 	/*
@@ -1291,5 +1313,21 @@ void AnimClass::Detach(TARGET target, bool all)
 			Object = NULL;
 			IsToDelete = true;
 		}
+	}
+}
+
+void AnimClass::Set_Owner(HousesType owner)
+{
+	OwnerHouse = owner;
+	if (VirtualAnim != NULL) {
+		VirtualAnim->Set_Owner(owner);
+	}
+}
+
+void AnimClass::Set_Visible_Flags(unsigned flags)
+{
+	VisibleFlags = flags;
+	if (VirtualAnim != NULL) {
+		VirtualAnim->Set_Visible_Flags(flags);
 	}
 }

@@ -1510,11 +1510,13 @@ typedef enum AnimType : char {
 	ANIM_RAPT_DIE,
 	ANIM_CHEM_BALL,				// Chemical warrior explosion.
 	ANIM_FLAG,					// CTF flag.
+	ANIM_BEACON,				// Beacon.
 
-	ANIM_FIRE_SMALL_VIRTUAL,	// Small flame animation (virtual).
-	ANIM_FIRE_MED_VIRTUAL,		// Medium flame animation (virtual).
-	ANIM_FIRE_MED2_VIRTUAL,		// Medium flame animation (oranger) (virtual).
-	ANIM_FIRE_TINY_VIRTUAL,		// Very tiny flames (virtual).
+	ANIM_FIRE_SMALL_VIRTUAL,		// Small flame animation (virtual).
+	ANIM_FIRE_MED_VIRTUAL,			// Medium flame animation (virtual).
+	ANIM_FIRE_MED2_VIRTUAL,			// Medium flame animation (oranger) (virtual).
+	ANIM_FIRE_TINY_VIRTUAL,			// Very tiny flames (virtual).
+	ANIM_BEACON_VIRTUAL,			// Beacon (virtual).
 
 	ANIM_COUNT,
 	ANIM_FIRST=0
@@ -2308,6 +2310,8 @@ typedef enum VocType : char{
 	VOC_DINOYES,		// Yes Sir in dino-speak.
 	VOC_DINOATK1,		// Dino attack sound.
 	VOC_DINODIE1,		// Dino die sound.
+
+	VOC_BEACON,			// Beacon sound.
 
 #ifdef PETROGLYPH_EXAMPLE_MOD
 	VOC_NUKE_LOB,		// Modded unit firing sound

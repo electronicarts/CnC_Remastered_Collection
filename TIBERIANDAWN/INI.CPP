@@ -491,11 +491,15 @@ bool Read_Scenario_Ini(char *root, bool fresh)
 	**	Build the full text of the mission objective.
 	*/
 	for (;;) {
-		char buff[16];
+		int len = (sizeof(BriefingText)-strlen(BriefingText))-1;
+		if (len <= 0) {
+			break;
+		}
 
+		char buff[16];
 		sprintf(buff, "%d", index++);
 		*stage = '\0';
-		WWGetPrivateProfileString("Briefing", buff, "", stage, (sizeof(BriefingText)-strlen(BriefingText))-1, buffer);
+		WWGetPrivateProfileString("Briefing", buff, "", stage, len, buffer);
 		if (strlen(stage) == 0) break;
 		strcat(stage, " ");
 		stage += strlen(stage);
@@ -541,6 +545,7 @@ bool Read_Scenario_Ini(char *root, bool fresh)
 	**		NOD09A - delete airstrike trigger when radar destroyed
 	**		NOD10B cell 2015 - LAND_ROCK
 	**		NOD13B - trigger AI production when the player reaches the transports
+			       - fix repeating airstrike trigger
 	**		NOD13C - delete airstrike trigger when radar destroyed
 	*/
 	if (_stricmp(ScenarioName, "scb07ea") == 0) {
@@ -572,6 +577,10 @@ bool Read_Scenario_Ini(char *root, bool fresh)
 		CellTriggers[340] = prod; prod->AttachCount++;
 		CellTriggers[404] = prod; prod->AttachCount++;
 		CellTriggers[468] = prod; prod->AttachCount++;
+
+		TriggerClass* xxxx = TriggerClass::As_Pointer("xxxx");
+		assert(xxxx != NULL);
+		xxxx->IsPersistant = TriggerClass::PERSISTANT;
 	}
 	if (_stricmp(ScenarioName, "scb13ec") == 0) {
 		for (int index = 0; index < Buildings.Count(); ++index) {
@@ -920,11 +929,15 @@ bool Read_Scenario_Ini_File(char *scenario_file_name, char* bin_file_name, const
 	**	Build the full text of the mission objective.
 	*/
 	for (;;) {
-		char buff[16];
+		int len = (sizeof(BriefingText) - strlen(BriefingText)) - 1;
+		if (len <= 0) {
+			break;
+		}
 
+		char buff[16];
 		sprintf(buff, "%d", index++);
 		*stage = '\0';
-		WWGetPrivateProfileString("Briefing", buff, "", stage, (sizeof(BriefingText) - strlen(BriefingText)) - 1, buffer);
+		WWGetPrivateProfileString("Briefing", buff, "", stage, len, buffer);
 		if (strlen(stage) == 0) break;
 		strcat(stage, " ");
 		stage += strlen(stage);

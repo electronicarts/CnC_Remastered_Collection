@@ -444,6 +444,7 @@ class HouseClass {
 		bool  Is_Ally(HousesType house) const;
 		bool  Is_Ally(HouseClass const * house) const;
 		bool  Is_Ally(ObjectClass const * object) const;
+		unsigned int  Get_Allies(void) const {return Allies;}
 		#ifdef CHEAT_KEYS
 		void  Debug_Dump(MonoClass *mono) const;
 		#endif
@@ -516,6 +517,9 @@ class HouseClass {
 
 		void Init_Unit_Trackers(void);
 		void Free_Unit_Trackers(void);
+
+		// MBL 09.08.2020 Mod support stub
+		void Handle_Mod_Game_Command(CELL cell, int mod_command_index); // mod_command_index = 0-3
 
 #ifdef USE_RA_AI
 		/*

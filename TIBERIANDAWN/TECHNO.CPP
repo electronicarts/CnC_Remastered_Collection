@@ -1402,7 +1402,7 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	**	If the scan is limited to capturable buildings only, then bail if the examined
 	**	object isn't a capturable building.
 	*/
-	if ((method & THREAT_CAPTURE) && (otype != RTTI_BUILDING || !((BuildingTypeClass const *)tclass)->IsCaptureable)) {
+	if ((method & THREAT_CAPTURE) && (otype != RTTI_BUILDING || !object->Can_Capture())) {
 		return(false);
 	}
 

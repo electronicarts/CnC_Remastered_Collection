@@ -1821,18 +1821,16 @@ void HouseClass::Attacked(BuildingClass* source)
 {
 	assert(Houses.ID(this) == ID);
 
-	bool expired = SpeakAttackDelay == 0;
-	bool spoke = false;
-
 #ifdef FIXIT_BASE_ANNOUNCE
-	// if (SpeakAttackDelay == 0 && ((Session.Type == GAME_NORMAL && IsPlayerControl) || PlayerPtr->Class->House == Class->House)) {
-	if (expired && ((Session.Type == GAME_NORMAL && IsPlayerControl) || PlayerPtr->Class->House == Class->House)) {
+	if (SpeakAttackDelay == 0 && ((Session.Type == GAME_NORMAL && IsPlayerControl) || PlayerPtr->Class->House == Class->House)) {
 #else
-	// if (SpeakAttackDelay == 0 && PlayerPtr->Class->House == Class->House) {
-	if (expired && PlayerPtr->Class->House == Class->House) {
+	if (SpeakAttackDelay == 0 && PlayerPtr->Class->House == Class->House) {
 #endif
-		Speak(VOX_BASE_UNDER_ATTACK, NULL, source ? source->Center_Coord() : 0);
-		spoke = true;
+		if (Session.Type == GAME_NORMAL) {
+			Speak(VOX_BASE_UNDER_ATTACK, NULL, source ? source->Center_Coord() : 0);
+		} else {
+			Speak(VOX_BASE_UNDER_ATTACK, this);
+		}
 
 		// MBL 06.13.2020 - Timing change from 2 minute cooldown, per https://jaas.ea.com/browse/TDRA-6784
 		// SpeakAttackDelay = Options.Normalize_Delay(TICKS_PER_MINUTE * Rule.SpeakDelay); // 2 minutes
@@ -1845,22 +1843,6 @@ void HouseClass::Attacked(BuildingClass* source)
 		*/
 		for (int index = 0; index < HouseTriggers[Class->House].Count(); index++) {
 			HouseTriggers[Class->House][index]->Spring(TEVENT_ATTACKED);
-		}
-	}
-
-	// MBL 07.07.2020 - CNC Patch 3, fix for not working for all players in MP, per https://jaas.ea.com/browse/TDRA-7249
-	// Separated to here as did not want to change any logic around the HouseTriggers[] Spring events
-	//
-	if (expired == true && spoke == false) 
-	{
-		if (Session.Type != GAME_NORMAL) // Multiplayer
-		{
-			Speak(VOX_BASE_UNDER_ATTACK, this);
-			spoke = true;
-	
-			// SpeakAttackDelay = Options.Normalize_Delay(TICKS_PER_MINUTE * Rule.SpeakDelay); // 2 minutes
-			// SpeakAttackDelay = Options.Normalize_Delay(TICKS_PER_MINUTE/2); // 30 seconds as requested
-			SpeakAttackDelay = Options.Normalize_Delay( (TICKS_PER_MINUTE/2)+(TICKS_PER_SECOND*5) ); // Tweaked for accuracy
 		}
 	}
 }

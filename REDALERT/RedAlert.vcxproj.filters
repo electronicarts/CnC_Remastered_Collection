@@ -1766,6 +1766,9 @@
     <ClInclude Include="Resource\resource.h">
       <Filter>Source Files\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="DLLInterfaceVersion.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="COORDA.ASM">

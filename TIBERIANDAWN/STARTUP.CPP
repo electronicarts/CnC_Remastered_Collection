@@ -317,7 +317,7 @@ int DLL_Startup(const char * command_line_in)
 	if (Parse_Command_Line(argc, argv)) {
 
 		WindowsTimer = new WinTimerClass(60,FALSE);
-
+#if (0)
 		int time_test = WindowsTimer->Get_System_Tick_Count();
 		Sleep (1000);
 		if (WindowsTimer->Get_System_Tick_Count() == time_test){
@@ -332,6 +332,7 @@ int DLL_Startup(const char * command_line_in)
 #endif	//FRENCH
 			return(EXIT_FAILURE);
 		}
+#endif
 
 		RawFileClass cfile("CONQUER.INI");
 

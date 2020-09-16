@@ -3430,11 +3430,11 @@ extern void DLL_Draw_Intercept(int shape_number, int x, int y, int width, int he
 extern void DLL_Draw_Pip_Intercept(const ObjectClass* object, int pip);
 void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, DirType rotation);
 
-void CC_Draw_Shape(const ObjectClass *object, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, DirType rotation, long virtualscale)
+void CC_Draw_Shape(const ObjectClass *object, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, DirType rotation, long virtualscale, int width, int height)
 {
 	if (window == WINDOW_VIRTUAL) {
-		int width = Get_Build_Frame_Width(shapefile);
-		int height = Get_Build_Frame_Height(shapefile);
+		if (width == 0) width = Get_Build_Frame_Width(shapefile);
+		if (height == 0) height = Get_Build_Frame_Height(shapefile);
 		DLL_Draw_Intercept(shapenum, x, y, width, height, (int)flags, object, rotation, virtualscale, NULL, HOUSE_NONE);
 		return;
 	}

@@ -2818,7 +2818,7 @@ void CellClass::Flag_Create(void)
 			CTFFlag = new AnimClass(ANIM_FLAG, Cell_Coord());
 		}
 		assert(CTFFlag != NULL);
-		CTFFlag->OwnerHouse = Owner;
+		CTFFlag->Set_Owner(Owner);
 	}
 }
 

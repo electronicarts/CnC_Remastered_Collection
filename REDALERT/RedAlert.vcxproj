@@ -514,6 +514,7 @@
     <ClInclude Include="DIBUTIL.H" />
     <ClInclude Include="DISPLAY.H" />
     <ClInclude Include="DLLInterface.h" />
+    <ClInclude Include="DLLInterfaceVersion.h" />
     <ClInclude Include="DOOR.H" />
     <ClInclude Include="DPMI.H" />
     <ClInclude Include="DRIVE.H" />

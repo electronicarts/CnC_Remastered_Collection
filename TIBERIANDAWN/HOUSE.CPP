@@ -1673,14 +1673,13 @@ void HouseClass::Attacked(BuildingClass* source)
 {
 	Validate();
 
-	bool expired = SpeakAttackDelay.Expired();
-	bool spoke = false;
+	if (SpeakAttackDelay.Expired() && PlayerPtr->Class->House == Class->House) {
 
-	// if (SpeakAttackDelay.Expired() && PlayerPtr->Class->House == Class->House) {
-	if (expired && PlayerPtr->Class->House == Class->House) {
-
-		Speak(VOX_BASE_UNDER_ATTACK, NULL, source ? source->Center_Coord() : 0);
-		spoke = true;
+		if (GameToPlay == GAME_NORMAL) {
+			Speak(VOX_BASE_UNDER_ATTACK, NULL, source ? source->Center_Coord() : 0);
+		} else {
+			Speak(VOX_BASE_UNDER_ATTACK, this);
+		}
 
 		// MBL 06.13.2020 - Timing change from 2 minute cooldown, per https://jaas.ea.com/browse/TDRA-6784
 		// SpeakAttackDelay.Set(Options.Normalize_Delay(SPEAK_DELAY)); // 2 minutes
@@ -1695,23 +1694,6 @@ void HouseClass::Attacked(BuildingClass* source)
 			HouseTriggers[Class->House][index]->Spring(EVENT_ATTACKED, Class->House);
 		}
 	}
-
-	// MBL 07.07.2020 - CNC Patch 3, fix for not working for all players in MP, per https://jaas.ea.com/browse/TDRA-7249
-	// Separated to here as did not want to change any logic around the HouseTriggers[] Spring events
-	//
-	if (expired == true && spoke == false) 
-	{
-		if (GameToPlay != GAME_NORMAL) // Multiplayer
-		{
-			Speak(VOX_BASE_UNDER_ATTACK, this);
-			spoke = true;
-	
-			// SpeakAttackDelay.Set(Options.Normalize_Delay(SPEAK_DELAY)); // 2 minutes
-			// SpeakAttackDelay.Set(Options.Normalize_Delay(TICKS_PER_MINUTE/2)); // 30 seconds as requested
-			SpeakAttackDelay.Set(Options.Normalize_Delay( (TICKS_PER_MINUTE/2)+(TICKS_PER_SECOND*5) )); // Tweaked for accuracy
-		}
-	}
-	// END MBL 07.07.2020
 }
 
 
@@ -2584,7 +2566,15 @@ ProdFailType HouseClass::Abandon_Production(RTTIType type)
 	if (GameToPlay == GAME_GLYPHX_MULTIPLAYER) {
 		if (IsHuman) {
 			Sidebar_Glyphx_Abandon_Production(type, *factory, this);
-			// Need to clear pending object here?
+			
+			// Need to clear pending object here if legacy renderer enabled
+
+			if (type == RTTI_BUILDINGTYPE || type == RTTI_BUILDING && Map.PendingObjectPtr) {
+				Map.PendingObjectPtr = 0;
+				Map.PendingObject = 0;
+				Map.PendingHouse = HOUSE_NONE;
+				Map.Set_Cursor_Shape(0);
+			}
 		}
 	} else {
 
@@ -2692,7 +2682,7 @@ bool HouseClass::Place_Special_Blast(SpecialWeaponType id, CELL cell)
 		case SPC_ION_CANNON:
 			if (IonCannon.Is_Ready()) {
 				anim = new AnimClass(ANIM_ION_CANNON, Cell_Coord(cell));
-				if (anim) anim->OwnerHouse = Class->House;
+				if (anim) anim->Set_Owner(Class->House);
 				if (this == PlayerPtr) {
 					Map.IsTargettingMode = false;
 				}

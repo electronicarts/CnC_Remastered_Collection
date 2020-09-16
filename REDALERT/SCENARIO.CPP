@@ -319,6 +319,14 @@ Theme.Stop();
 		return(false);
 	}
 
+	/* Swap Lt. Blue and Blue color remaps in skirmish/multiplayer */
+	if (Session.Type != GAME_NORMAL) {
+		RemapControlType temp;
+		memcpy(&temp, &ColorRemaps[PCOLOR_LTBLUE], sizeof(RemapControlType));
+		memcpy(&ColorRemaps[PCOLOR_LTBLUE], &ColorRemaps[PCOLOR_BLUE], sizeof(RemapControlType));
+		memcpy(&ColorRemaps[PCOLOR_BLUE], &temp, sizeof(RemapControlType));
+	}
+
 	/*
 	**	Play the winning movie and then start the next scenario.
 	*/
@@ -2293,11 +2301,15 @@ bool Read_Scenario_INI(char * fname, bool )
 	Rule.Difficulty(ini);
 
 	/*
-	**	Fix a legacy bug with England and France country bonuses
+	**	- Fix a legacy bug with England and France country bonuses.
+	**	- Use ore growth and spread values from the special settings.
 	*/
 	if (Session.Type != GAME_NORMAL) {
 		HouseTypeClass::As_Reference(HOUSE_ENGLAND).ArmorBias = fixed(9, 10);
 		HouseTypeClass::As_Reference(HOUSE_FRANCE).ROFBias = fixed(9, 10);
+
+		Rule.IsTGrowth = Special.IsTGrowth;
+		Rule.IsTSpread = Special.IsTSpread;
 	}
 
 	/*
@@ -2477,6 +2489,7 @@ bool Read_Scenario_INI(char * fname, bool )
 	**		Blue Lakes multiplayer map cell 11937 - LAND_RIVER
 	**		USSR mission 13 - fixup trigger action
 	**		Allied mission 5B - fail mission if spy re-boards the transport at mission start
+	**		Allied mission 8A - Germany is allied with Greece and itself
 	**		Allied mission 9A - fail mission if tech center is destroyed before being spied
 	**		Aftermath: Brother in Arms - have transports move to separate waypoints
 	**		Aftermath: Let's Make a Steal - Make the pillboxes un-capturable
@@ -2523,6 +2536,17 @@ bool Read_Scenario_INI(char * fname, bool )
 		TriggerTypeClass* frc1_trigger = TriggerTypeClass::From_Name("frc1");
 		assert(frc1_trigger != NULL);
 		frc1_trigger->Action1.Trigger = los3_trigger;
+	}
+
+	if (_stricmp(Scen.ScenarioName, "scg08ea.ini") == 0) {
+		for (int house = HOUSE_FIRST; house < HOUSE_COUNT; ++house) {
+			HouseClass* ptr = Houses.Ptr(house);
+			if (ptr != NULL && ptr->IsActive) {
+				if (ptr->Class->House == HOUSE_GREECE || ptr->Class->House == HOUSE_GERMANY) {
+					ptr->Make_Ally(HOUSE_GERMANY);
+				}
+			}
+		}
 	}
 
 	if (_stricmp(Scen.ScenarioName, "scg09ea.ini") == 0) {
@@ -3202,6 +3226,7 @@ static void Create_Units(bool official)
 			if (numtaken == 0) {
 				int pick = Random_Pick(0, num_waypts-1);
 				centroid = waypts[pick];
+				hptr->StartLocationOverride = pick;
 				taken[pick] = true;
 				numtaken++;
 			} else {
@@ -3251,6 +3276,7 @@ static void Create_Units(bool official)
 				**	Assign this best position to the house.
 				*/
 				centroid = waypts[best];
+				hptr->StartLocationOverride = best;
 				taken[best] = true;
 				numtaken++;
 			}

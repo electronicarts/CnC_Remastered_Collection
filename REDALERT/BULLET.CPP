@@ -1075,7 +1075,7 @@ void BulletClass::Bullet_Explodes(bool forced)
 		//
 		else if (aptr && anim == ANIM_ATOM_BLAST && aptr->OwnerHouse == HOUSE_NONE) {
 			if (Payback && Payback->House && Payback->House->Class) {
-				aptr->OwnerHouse = Payback->House->Class->House;
+				aptr->Set_Owner(Payback->House->Class->House);
 			}
 		}
 	}

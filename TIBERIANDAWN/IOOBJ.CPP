@@ -1560,6 +1560,10 @@ bool UnitClass::Save(FileClass & file)
  *=============================================================================================*/
 void UnitClass::Code_Pointers(void)
 {
+	if (TiberiumUnloadRefinery) {
+		TiberiumUnloadRefinery = (BuildingClass *)TiberiumUnloadRefinery->As_Target();
+	}
+
 	TarComClass::Code_Pointers();
 }
 
@@ -1584,6 +1588,11 @@ void UnitClass::Code_Pointers(void)
  *=============================================================================================*/
 void UnitClass::Decode_Pointers(void)
 {
+	if (TiberiumUnloadRefinery) {
+		TiberiumUnloadRefinery = As_Building((TARGET)TiberiumUnloadRefinery, false);
+		Check_Ptr((void *)TiberiumUnloadRefinery, __FILE__, __LINE__);
+	}
+
 	TarComClass::Decode_Pointers();
 }
 
