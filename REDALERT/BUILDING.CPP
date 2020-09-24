@@ -3463,7 +3463,9 @@ bool BuildingClass::Can_Capture(void) const
 
 	// Only allow capturing of multiplayer-owned structures
 	if (Session.Type != GAME_NORMAL) {
-		can_capture &= House->Class->House >= HOUSE_MULTI1 && House->Class->House <= HOUSE_MULTI8;
+		if (*this == STRUCT_V01) {		// Check to fix exploit in specific map 'Tournament Ore Rift'
+			can_capture = false;
+		}
 	}
 
 	return(can_capture);

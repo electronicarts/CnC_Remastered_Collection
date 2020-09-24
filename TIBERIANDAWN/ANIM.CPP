@@ -637,7 +637,7 @@ AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay
 	**	Check for a virtual animation
 	*/
 	if (Class->VirtualAnim != ANIM_NONE) {
-		VirtualAnim = new AnimClass(Class->VirtualAnim, 0, timedelay, loop, alt);
+		VirtualAnim = new AnimClass(Class->VirtualAnim, Coord, timedelay, loop, alt);
 		if (VirtualAnim != NULL) {
 			VirtualAnim->Make_Invisible();
 		}

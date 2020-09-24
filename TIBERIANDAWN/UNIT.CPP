@@ -397,20 +397,6 @@ void UnitClass::AI(void)
 	}
 
 	/*
-	**	Clear the unload refinery if not haresting or entering a refinery.
-	*/
-	if (Class->IsToHarvest) {
-		if (Mission != MISSION_HARVEST) {
-			if (Mission != MISSION_ENTER ||
-				!In_Radio_Contact() ||
-				Contact_With_Whom()->What_Am_I() != RTTI_BUILDING ||
-				*((BuildingClass*)Contact_With_Whom()) != STRUCT_REFINERY) {
-				TiberiumUnloadRefinery = NULL;
-			}
-		}
-	}
-
-	/*
 	**	Rocket launchers will reload every so often.
 	*/
 	if (*this == UNIT_MSAM && Ammo < Class->MaxAmmo) {
@@ -762,6 +748,22 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 				return(RADIO_ROGER);
 			}
 			break;
+
+		/*
+		**	Something bad has happened to the object in contact with. Abort any coordinated
+		**	activity with this object. Basically, ... run away! Run away!
+		*/
+		case RADIO_RUN_AWAY:
+			if (Class->IsToHarvest && In_Radio_Contact() && Mission == MISSION_ENTER) {
+				TechnoClass * contact = Contact_With_Whom();
+				if (contact->What_Am_I() == RTTI_BUILDING && *((BuildingClass*)contact) == STRUCT_REFINERY) {
+					// Slight hack; set a target so the harvest mission knows to skip to finding home state
+					Assign_Mission(MISSION_HARVEST);
+					TarCom = As_Target();
+					return(RADIO_ROGER);
+				}
+			}
+			return(DriveClass::Receive_Message(from, message, param));
 
 		/*
 		**	When this message is received, it means that the other object
@@ -2418,93 +2420,26 @@ bool UnitClass::Goto_Tiberium(void)
 }
 
 
-struct RefineryData
-{
-	BuildingClass* Refinery;
-	int Distance;
-	int Harvesters;
-};
-
-static bool operator==(const RefineryData& lhs, const RefineryData& rhs)
-{
-	return lhs.Refinery == rhs.Refinery;
-}
-
-static bool operator!=(const RefineryData& lhs, const RefineryData& rhs)
-{
-	return !(lhs == rhs);
-}
-
-static int _refinery_compare(const void * left, const void * right)
-{
-	const RefineryData& lhs = *reinterpret_cast<const RefineryData*>(left);
-	const RefineryData& rhs = *reinterpret_cast<const RefineryData*>(right);
-	if (lhs.Distance < rhs.Distance) {
-		return -1;
-	} else if (rhs.Distance < lhs.Distance) {
-		return 1;
-	}
-	return 0;
-}
-
 BuildingClass* UnitClass::Find_Best_Refinery(void) const
 {
-	static DynamicVectorClass<RefineryData> _refineries;
-
-	_refineries.Clear();
-	for (int i = 0; i < Buildings.Count(); ++i) {
-		BuildingClass* refinery = Buildings.Ptr(i);
-		if (refinery != NULL &&
-			refinery->House == House &&
-			!refinery->IsInLimbo &&
-			*refinery == STRUCT_REFINERY) {
-			_refineries.Add(RefineryData{ refinery, Distance(refinery), 0 });
+	/*
+	**	Remember our last refinery and prefer that one, if still available and valid.
+	*/
+	if (TiberiumUnloadRefinery != NULL) {
+		if (TiberiumUnloadRefinery->House == House &&
+			!TiberiumUnloadRefinery->IsInLimbo &&
+			TiberiumUnloadRefinery->Mission != MISSION_DECONSTRUCTION &&
+			*TiberiumUnloadRefinery == STRUCT_REFINERY) {
+			return TiberiumUnloadRefinery;
+		} else {
+			TiberiumUnloadRefinery = NULL;
 		}
 	}
 
-	// Base case for zero or one refineries.
-	if (_refineries.Count() == 0) {
-		return NULL;
-	} else if (_refineries.Count() == 1) {
-		return _refineries[0].Refinery;
-	}
-
-	// Count harvesters going to each refinery as well as the total.
-	int num_harvesters = 0;
-	for (int i = 0; i < Units.Count(); ++i) {
-		UnitClass* unit = Units.Ptr(i);
-		if (unit->IsActive && unit->Class->IsToHarvest && unit->House == House) {
-			BuildingClass* refinery = unit->Tiberium_Unload_Refinery();
-			if (refinery != NULL) {
-				int index = _refineries.ID(RefineryData{ refinery });
-				assert(index >= 0);
-				_refineries[index].Harvesters++;
-				num_harvesters++;
-			}
-		}
-	}
-
-	// Sort by distance (special case for 2 refineries as that's a single swap).
-	if (_refineries.Count() == 2) {
-		if (_refineries[0].Distance > _refineries[1].Distance) {
-			RefineryData temp = _refineries[0];
-			_refineries[0] = _refineries[1];
-			_refineries[1] = temp;
-		}
-	} else {
-		qsort(&_refineries[0], _refineries.Count(), sizeof(RefineryData), _refinery_compare);
-	}
-
-	// Evenly distribute harvesters among refineries.
-	int harvesters_per_refinery = (num_harvesters + _refineries.Count() - 1) / _refineries.Count();
-	for (int i = 0; i < _refineries.Count(); ++i) {
-		if (_refineries[i].Harvesters < harvesters_per_refinery) {
-			return _refineries[i].Refinery;
-		}
-	}
-
-	// Fall back on closest refinery
-	return _refineries[0].Refinery;
+	/*
+	**	Find nearby refinery and head to it?
+	*/
+	return Find_Docking_Bay(STRUCT_REFINERY, false);
 }
 
 
@@ -2800,10 +2735,7 @@ int UnitClass::Mission_Harvest(void)
 				Assign_Target(TARGET_NONE);
 				Status = FINDHOME;
 				return(1);
-			}
-
-			TiberiumUnloadRefinery = NULL;
-			if (Goto_Tiberium()) {
+			} else if (Goto_Tiberium()) {
 				IsHarvesting = true;
 				Set_Rate(2);
 				Set_Stage(0);
@@ -2865,14 +2797,21 @@ int UnitClass::Mission_Harvest(void)
 			if (!Target_Legal(NavCom)) {
 
 				/*
-				**	Find nearby refinery and head to it.
+				**	Find best refinery.
 				*/
 				BuildingClass * nearest = Find_Best_Refinery();
-				if (nearest) {
-					TiberiumUnloadRefinery = nearest;
-					if (Transmit_Message(RADIO_HELLO, nearest) == RADIO_ROGER) {
-						Status = HEADINGHOME;
-					} else {
+
+				/*
+				**	Since the refinery said it was ok to load, establish radio
+				**	contact with the refinery and then await docking orders.
+				*/
+				if (nearest && Transmit_Message(RADIO_HELLO, nearest) == RADIO_ROGER) {
+					Status = HEADINGHOME;
+				} else {
+					ScenarioInit++;
+					nearest = Find_Best_Refinery();
+					ScenarioInit--;
+					if (nearest) {
 						Assign_Destination(::As_Target(nearest->Nearby_Location(this)));
 					}
 				}
@@ -2889,7 +2828,6 @@ int UnitClass::Mission_Harvest(void)
 			return(1);
 
 		case GOINGTOIDLE:
-			TiberiumUnloadRefinery = NULL;
 			Assign_Mission(MISSION_GUARD);
 			break;
 
@@ -2965,6 +2903,28 @@ int UnitClass::Mission_Hunt(void)
 		}
 	}
 	return(TICKS_PER_SECOND);
+}
+
+
+int UnitClass::Mission_Enter(void)
+{
+	Validate();
+	if (Class->IsToHarvest) {
+		TechnoClass * contact = Contact_With_Whom();
+		if (contact == NULL) {
+			contact = As_Techno(ArchiveTarget);
+		}
+		if (contact == NULL) {
+			contact = As_Techno(NavCom);
+		}
+		if (contact != NULL &&
+			contact->What_Am_I() == RTTI_BUILDING &&
+			*((BuildingClass*)contact) == STRUCT_REFINERY) {
+			TiberiumUnloadRefinery = (BuildingClass*)contact;
+		}
+	}
+
+	return(TarComClass::Mission_Enter());
 }
 
 

@@ -442,20 +442,6 @@ void UnitClass::AI(void)
 	}
 
 	/*
-	**	Clear the unload refinery if not haresting or entering a refinery.
-	*/
-	if (Class->IsToHarvest) {
-		if (Mission != MISSION_HARVEST) {
-			if (Mission != MISSION_ENTER ||
-				!In_Radio_Contact() ||
-				Contact_With_Whom()->What_Am_I() != RTTI_BUILDING ||
-				*((BuildingClass*)Contact_With_Whom()) != STRUCT_REFINERY) {
-				TiberiumUnloadRefinery = TARGET_NONE;
-			}
-		}
-	}
-
-	/*
 	**	Handle combat logic for this unit. It will determine if it has a target and
 	**	if so, if conditions are favorable for firing. When conditions permit, the
 	**	unit will fire upon its target.
@@ -925,6 +911,22 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 				return(RADIO_ROGER);
 			}
 			break;
+
+		/*
+		**	Something bad has happened to the object in contact with. Abort any coordinated
+		**	activity with this object. Basically, ... run away! Run away!
+		*/
+		case RADIO_RUN_AWAY:
+			if (Class->IsToHarvest && In_Radio_Contact() && Mission == MISSION_ENTER) {
+				TechnoClass * contact = Contact_With_Whom();
+				if (contact->What_Am_I() == RTTI_BUILDING && *((BuildingClass*)contact) == STRUCT_REFINERY) {
+					// Slight hack; set a target so the harvest mission knows to skip to finding home state
+					Assign_Mission(MISSION_HARVEST);
+					TarCom = As_Target();
+					return(RADIO_ROGER);
+				}
+			}
+			return(DriveClass::Receive_Message(from, message, param));
 
 		/*
 		**	When this message is received, it means that the other object
@@ -2926,7 +2928,6 @@ int UnitClass::Mission_Harvest(void)
 			/*
 			** Look for ore where we last found some - mine the same patch
 			*/
-			TiberiumUnloadRefinery = TARGET_NONE;
 			if (Target_Legal(ArchiveTarget)) {
 				Assign_Destination(ArchiveTarget);
 				ArchiveTarget = 0;
@@ -3008,17 +3009,24 @@ int UnitClass::Mission_Harvest(void)
 			if (!Target_Legal(NavCom)) {
 
 				/*
-				**	Find nearby refinery and head to it.
+				**	Find best refinery.
 				*/
 				BuildingClass * nearest = Find_Best_Refinery();
-				if (nearest != NULL) {
-					TiberiumUnloadRefinery = nearest->As_Target();
-					if (Transmit_Message(RADIO_HELLO, nearest) == RADIO_ROGER) {
-						Status = HEADINGHOME;
-						if (nearest->House == PlayerPtr && (PlayerPtr->Capacity - PlayerPtr->Tiberium) < 300 && PlayerPtr->Capacity > 500 && (PlayerPtr->ActiveBScan & (STRUCTF_REFINERY | STRUCTF_CONST))) {
-							Speak(VOX_NEED_MO_CAPACITY);
-						}
-					} else {
+
+				/*
+				**	Since the refinery said it was ok to load, establish radio
+				**	contact with the refinery and then await docking orders.
+				*/
+				if (nearest != NULL && Transmit_Message(RADIO_HELLO, nearest) == RADIO_ROGER) {
+					Status = HEADINGHOME;
+					if (nearest->House == PlayerPtr && (PlayerPtr->Capacity - PlayerPtr->Tiberium) < 300 && PlayerPtr->Capacity > 500 && (PlayerPtr->ActiveBScan & (STRUCTF_REFINERY | STRUCTF_CONST))) {
+						Speak(VOX_NEED_MO_CAPACITY);
+					}
+				} else {
+					ScenarioInit++;
+					nearest = Find_Best_Refinery();
+					ScenarioInit--;
+					if (nearest != NULL) {
 						Assign_Destination(::As_Target(Nearby_Location(nearest)));
 					}
 				}
@@ -3039,7 +3047,6 @@ int UnitClass::Mission_Harvest(void)
 		**	no where to go.
 		*/
 		case GOINGTOIDLE:
-			TiberiumUnloadRefinery = TARGET_NONE;
 			if (IsUseless) {
 				if (House->ActiveBScan & STRUCTF_REPAIR) {
 					Assign_Mission(MISSION_REPAIR);
@@ -3822,6 +3829,27 @@ int UnitClass::Mission_Move(void)
 }
 
 
+int UnitClass::Mission_Enter(void)
+{
+	assert(Units.ID(this) == ID);
+	assert(IsActive);
+
+	if (Class->IsToHarvest) {
+		TechnoClass * contact = Contact_With_Whom();
+		if (contact == NULL) {
+			contact = As_Techno(ArchiveTarget);
+		}
+		if (contact != NULL &&
+			contact->What_Am_I() == RTTI_BUILDING &&
+			*((BuildingClass*)contact) == STRUCT_REFINERY) {
+			TiberiumUnloadRefinery = contact->As_Target();
+		}
+	}
+
+	return(DriveClass::Mission_Enter());
+}
+
+
 /***********************************************************************************************
  * UnitClass::Desired_Load_Dir -- Determines the best cell and facing for loading.             *
  *                                                                                             *
@@ -4413,100 +4441,29 @@ fixed UnitClass::Tiberium_Load(void) const
 }
 
 
-BuildingClass* UnitClass::Tiberium_Unload_Refinery(void) const
-{
-	return Target_Legal(TiberiumUnloadRefinery) ? As_Building(TiberiumUnloadRefinery) : NULL;
-}
-
-
-struct RefineryData
-{
-	BuildingClass* Refinery;
-	int Distance;
-	int Harvesters;
-};
-
-static bool operator==(const RefineryData& lhs, const RefineryData& rhs)
-{
-	return lhs.Refinery == rhs.Refinery;
-}
-
-static bool operator!=(const RefineryData& lhs, const RefineryData& rhs)
-{
-	return !(lhs == rhs);
-}
-
-static int _refinery_compare(const void * left, const void * right)
-{
-	const RefineryData& lhs = *reinterpret_cast<const RefineryData*>(left);
-	const RefineryData& rhs = *reinterpret_cast<const RefineryData*>(right);
-	if (lhs.Distance < rhs.Distance) {
-		return -1;
-	} else if (rhs.Distance < lhs.Distance) {
-		return 1;
-	}
-	return 0;
-}
-
 BuildingClass* UnitClass::Find_Best_Refinery(void) const
 {
-	static DynamicVectorClass<RefineryData> _refineries;
-
-	_refineries.Clear();
-	for (int i = 0; i < Buildings.Count(); ++i) {
-		BuildingClass* refinery = Buildings.Ptr(i);
+	/*
+	**	Remember our last refinery and prefer that one, if still available and valid.
+	*/
+	if (Target_Legal(TiberiumUnloadRefinery)) {
+		BuildingClass * refinery = As_Building(TiberiumUnloadRefinery);
 		if (refinery != NULL &&
 			refinery->House == House &&
 			!refinery->IsInLimbo &&
+			refinery->Mission != MISSION_DECONSTRUCTION &&
 			*refinery == STRUCT_REFINERY &&
 			Map[refinery->Center_Coord()].Zones[Techno_Type_Class()->MZone] == Map[Center_Coord()].Zones[Techno_Type_Class()->MZone]) {
-			_refineries.Add(RefineryData{ refinery, Distance(refinery), 0 });
+			return refinery;
+		} else {
+			TiberiumUnloadRefinery = TARGET_NONE;
 		}
 	}
 
-	// Base case for zero or one refineries.
-	if (_refineries.Count() == 0) {
-		return NULL;
-	} else if (_refineries.Count() == 1) {
-		return _refineries[0].Refinery;
-	}
-
-	// Count harvesters going to each refinery as well as the total.
-	int num_harvesters = 0;
-	for (int i = 0; i < Units.Count(); ++i) {
-		UnitClass* unit = Units.Ptr(i);
-		if (unit->IsActive && Class->IsToHarvest && unit->House == House) {
-			BuildingClass* refinery = unit->Tiberium_Unload_Refinery();
-			if (refinery != NULL) {
-				int index = _refineries.ID(RefineryData{ refinery });
-				assert(index >= 0);
-				_refineries[index].Harvesters++;
-				num_harvesters++;
-			}
-		}
-	}
-
-	// Sort by distance (special case for 2 refineries as that's a single swap).
-	if (_refineries.Count() == 2) {
-		if (_refineries[0].Distance > _refineries[1].Distance) {
-			RefineryData temp = _refineries[0];
-			_refineries[0] = _refineries[1];
-			_refineries[1] = temp;
-		}
-	} else {
-		qsort(&_refineries[0], _refineries.Count(), sizeof(RefineryData), _refinery_compare);
-	}
-
-	// Evenly distribute harvesters among refineries.
-	int harvesters_per_refinery = (num_harvesters + _refineries.Count() - 1) / _refineries.Count();
-	for (int i = 0; i < _refineries.Count(); ++i) {
-		if (_refineries[i].Harvesters < harvesters_per_refinery) {
-			return _refineries[i].Refinery;
-		}
-	}
-
-	// Fall back on closest refinery
-	return _refineries[0].Refinery;
+	/*
+	**	Find nearby refinery and head to it?
+	*/
+	return Find_Docking_Bay(STRUCT_REFINERY, false);
 }
 
 

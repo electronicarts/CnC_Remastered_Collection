@@ -6495,6 +6495,17 @@ int TechnoTypeClass::Time_To_Build(HousesType house) const
 		time *= hptr->BuildSpeedBias;
 	}
 	else {
+		
+		/*
+		** New feature - Turkey has a 10% build speed bonus even though it isn't specified in the rules
+		*/
+		if (hptr->ActLike == HOUSE_TURKEY) {
+			if (hptr->BuildSpeedBias == fixed(1)) {
+				time *= 9;
+				time /= 10;
+			}
+		}
+		
 		if (What_Am_I() == RTTI_BUILDINGTYPE || What_Am_I() == RTTI_INFANTRYTYPE) {
 			time *= hptr->BuildSpeedBias;
 		}

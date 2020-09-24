@@ -533,7 +533,33 @@ namespace MobiusEditor.Utility
                     var converter = propertyDescriptors.Find(property.Name, false)?.Converter ?? TypeDescriptor.GetConverter(property.PropertyType);
                     if (converter.CanConvertFrom(context, typeof(string)))
                     {
-                        property.SetValue(data, converter.ConvertFromString(context, section[property.Name]));
+                        try
+                        {
+                            property.SetValue(data, converter.ConvertFromString(context, section[property.Name]));
+                        }
+                        catch (FormatException)
+                        {
+                            if (property.PropertyType == typeof(bool))
+                            {
+                                var value = section[property.Name].ToLower();
+                                if (value == "no")
+                                {
+                                    property.SetValue(data, false);
+                                }
+                                else if (value == "yes")
+                                {
+                                    property.SetValue(data, true);
+                                }
+                                else
+                                {
+                                    throw;
+                                }
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
                     }
                 }
             }

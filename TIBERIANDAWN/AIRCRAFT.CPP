@@ -1899,15 +1899,24 @@ void AircraftClass::Enter_Idle_Mode(bool )
 				} else {
 
 					/*
-					**	Normal aircraft try to find a good landing spot to rest.
+					**	Continue with the current helipad if there is one.
 					*/
-					BuildingClass * building = Find_Docking_Bay(STRUCT_HELIPAD, false);
-					Assign_Destination(TARGET_NONE);
-					if (building && Transmit_Message(RADIO_HELLO, building) == RADIO_ROGER) {
-						mission = MISSION_ENTER;
+					if (!In_Radio_Contact() ||
+						Contact_With_Whom()->What_Am_I() != RTTI_BUILDING ||
+						*((BuildingClass*)Contact_With_Whom()) != STRUCT_HELIPAD) {
+						/*
+						**	Normal aircraft try to find a good landing spot to rest.
+						*/
+						BuildingClass * building = Find_Docking_Bay(STRUCT_HELIPAD, false);
+						Assign_Destination(TARGET_NONE);
+						if (building && Transmit_Message(RADIO_HELLO, building) == RADIO_ROGER) {
+							mission = MISSION_ENTER;
+						} else {
+							Assign_Destination(Good_LZ());
+							mission = MISSION_MOVE;
+						}
 					} else {
-						Assign_Destination(Good_LZ());
-						mission = MISSION_MOVE;
+						mission = MISSION_ENTER;
 					}
 				}
 			} else {

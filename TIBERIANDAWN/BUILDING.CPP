@@ -3879,9 +3879,6 @@ bool BuildingClass::Can_Capture(void) const
 		if (!House->IsHuman && Trigger != NULL && Trigger->Action == TriggerClass::ACTION_WINLOSE) {
 			can_capture = true;
 		}
-	} else {
-		// Only allow capturing of multiplayer-owned structures
-		can_capture &= House->Class->House >= HOUSE_MULTI1 && House->Class->House <= HOUSE_MULTI6;
 	}
 
 	return(can_capture);
