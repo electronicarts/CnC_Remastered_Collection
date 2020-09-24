@@ -31,7 +31,6 @@
  *---------------------------------------------------------------------------------------------*
  * Functions:                                                                                  *
  *   BulletTypeClass::BulletTypeClass -- Constructor for bullet type objects.                  *
- *   BulletTypeClass::Load_Shapes -- Load shape data for bullet types.                         *
  *   BulletTypeClass::One_Time -- Performs the one time processing for bullets.                *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
