@@ -220,7 +220,6 @@
     <ClCompile Include="CSTRAW.CPP" />
     <ClCompile Include="DDE.CPP" />
     <ClCompile Include="DEBUG.CPP" />
-    <ClCompile Include="DESCDLG.CPP" />
     <ClCompile Include="DIAL8.CPP" />
     <ClCompile Include="DIALOG.CPP" />
     <ClCompile Include="DIBFILE.CPP" />
@@ -508,7 +507,6 @@
     <ClInclude Include="DDE.H" />
     <ClInclude Include="DEBUG.H" />
     <ClInclude Include="DEFINES.H" />
-    <ClInclude Include="DESCDLG.H" />
     <ClInclude Include="DIAL8.H" />
     <ClInclude Include="DIBAPI.H" />
     <ClInclude Include="DIBUTIL.H" />
