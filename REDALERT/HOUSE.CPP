@@ -4352,7 +4352,7 @@ void HouseClass::Init_Data(PlayerColorType color, HousesType house, int credits)
 	// MBL 03.20.2020 
 	// Attempt to fix Red Alert credit tick-up bug after saving a game that has had harvesting underway
 	// Note that this code gets called with both game loads and saves
-	// When this function is called, sometimes credits value has Tiberium (or HarvestedCredits?) variables applied, and sometimes now
+	// When this function is called, sometimes credits value has Tiberium (or HarvestedCredits?) variables applied, and sometimes not
 	//
 	if (NowSavingGame == true) 
 	{
