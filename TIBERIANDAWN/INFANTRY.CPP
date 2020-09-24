@@ -635,7 +635,7 @@ void InfantryClass::Draw_It(int x, int y, WindowNumberType window)
 
 #ifdef BOXING
 // BG hack to get him to face right when he's supposed to.
-	if (IsBoxing && BodyFacing<128) shapenum += 47;
+	if (IsBoxing && facing < Facing_To_32(DIR_S)) shapenum += 47;
 #endif
 
 	/*
@@ -1052,6 +1052,29 @@ void InfantryClass::AI(void)
 	}
 
 	/*
+	**	Catch infantry that may be stuck in Boxing animations and get them out of it
+	*/
+	if (!IsBoxing)
+	{
+		switch (Doing)
+		{
+		case DO_FIGHT_READY:
+		case DO_ON_GUARD:
+		case DO_PUNCH:
+		case DO_KICK:
+		case DO_PUNCH_HIT1:
+		case DO_PUNCH_HIT2:
+		case DO_KICK_HIT1:
+		case DO_KICK_HIT2:
+			Do_Action(DO_READY_WEAPON, true);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	/*
 	**	Act on new orders if the unit is at a good position to do so.
 	*/
 	if (!IsDriving && (Doing == DO_NOTHING || MasterDoControls[Doing].Interrupt)) {
@@ -1154,7 +1177,7 @@ void InfantryClass::AI(void)
 					if (Is_Target_Infantry(TarCom) && (Distance(TarCom)<=0x80) && (Coord_Y(Coord) == Coord_Y(object->Coord))) {
 
 						// Too close to shoot, so start hand-to-hand combat
-						if (Establish_Contact((TechnoClass *)object)) {
+						if (Transmit_Message(RADIO_HELLO, (TechnoClass *)object) == RADIO_ROGER) {
 							if (Transmit_Message(RADIO_PREPARE_TO_BOX) == RADIO_ROGER) {
 								IsBoxing = true;
 								Do_Action(DO_ON_GUARD,true);
@@ -1280,7 +1303,7 @@ void InfantryClass::AI(void)
 	/*
 	**	Perform movement operations at this time.
 	*/
-	if (!IsFiring /*&& !IsBoxing*/) {
+	if (!IsFiring && !IsBoxing) {
 		if (!IsDriving) {
 
 			/*
@@ -2379,7 +2402,8 @@ BulletClass * InfantryClass::Fire_At(TARGET target, int which)
 			** Fighting done for some reason, so pick up gun
 			*/
 			IsBoxing = false;
-			Do_Action(DO_READY_WEAPON,true);
+			if (Strength) // Make sure we haven't died in the meantime
+				Do_Action(DO_READY_WEAPON,true);
 		}
 	} else {
 #endif
@@ -2792,8 +2816,8 @@ RadioMessageType InfantryClass::Receive_Message(RadioClass * from, RadioMessageT
 			if (IsBoxing) break;
 #endif
 			if (Contact_With_Whom() == from) {
-				Do_Action(DO_ON_GUARD, true);
 				Assign_Target(Contact_With_Whom()->As_Target());
+				Do_Action(DO_ON_GUARD, true);
 				return(RADIO_ROGER);
 			}
 			return(RADIO_NEGATIVE);
@@ -2802,7 +2826,7 @@ RadioMessageType InfantryClass::Receive_Message(RadioClass * from, RadioMessageT
 		**	Just received a kick! Take some damage.
 		*/
 		case	RADIO_KICK:
-			damage = Infantry_Kick_Damage[Random_Pick(0, (int)(sizeof(Infantry_Kick_Damage) / sizeof(Infantry_Kick_Damage[0])))];
+			damage = Infantry_Kick_Damage[Random_Pick(0, (int)(sizeof(Infantry_Kick_Damage) / sizeof(Infantry_Kick_Damage[0])) - 1)];
 			if (Take_Damage(damage, 0, WARHEAD_FOOT, this) == RESULT_DESTROYED) return(RADIO_STATIC);
 			return(RADIO_ROGER);
 
@@ -2810,7 +2834,7 @@ RadioMessageType InfantryClass::Receive_Message(RadioClass * from, RadioMessageT
 		**	Just recieved a punch! Take some damage.
 		*/
 		case	RADIO_PUNCH:
-			damage = Infantry_Punch_Damage[Random_Pick(0, (int)(sizeof(Infantry_Punch_Damage) / sizeof(Infantry_Punch_Damage[0])))];
+			damage = Infantry_Punch_Damage[Random_Pick(0, (int)(sizeof(Infantry_Punch_Damage) / sizeof(Infantry_Punch_Damage[0])) - 1)];
 			if (Take_Damage(damage, 0, WARHEAD_FIST, this) == RESULT_DESTROYED) return(RADIO_STATIC);
 			return(RADIO_ROGER);
 
