@@ -1,4 +1,6 @@
-Electronic Arts Inc. released only TiberianDawn.dll and RedAlert.dll and their corresponding source code under the GPL V3 below, with additional terms at the bottom.    
+Electronic Arts Inc. released only TiberianDawn.dll and RedAlert.dll and
+their corresponding source code under the GPL V3 below, with additional
+terms at the bottom.
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
