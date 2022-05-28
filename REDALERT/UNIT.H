@@ -112,9 +112,14 @@ class UnitClass :	public DriveClass
 		FacingClass SecondaryFacing;
 
 		/*
+		**	This is the refinery a harvester is interested in unloading at.
+		*/
+		mutable TARGET TiberiumUnloadRefinery;
+
+		/*
 		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
 		*/
-		unsigned char SaveLoadPadding[32];
+		unsigned char SaveLoadPadding[28];
 
 		/*---------------------------------------------------------------------
 		**	Constructors, Destructors, and overloaded operators.
@@ -137,13 +142,16 @@ class UnitClass :	public DriveClass
 		bool Try_To_Deploy(void);
 		virtual void Scatter(COORDINATE threat, bool forced=false, bool nokidding=false);
 
-		bool Tiberium_Check(CELL &center, int x, int y);
+		int Tiberium_Check(CELL &center, int x, int y);
 		bool Flag_Attach(HousesType house);
 		bool Flag_Remove(void);
 		bool Goto_Tiberium(int radius);
 		bool Harvesting(void);
 		void APC_Close_Door(void);
 		void APC_Open_Door(void);
+
+		unsigned int Apply_Temporary_Jamming_Shroud(HouseClass *house_to_apply_for);
+		void Unapply_Temporary_Jamming_Shroud(HouseClass *house_to_unapply_for, unsigned int shroud_bits_applied);
 
 		/*
 		**	Query functions.
@@ -158,6 +166,7 @@ class UnitClass :	public DriveClass
 		virtual bool Ok_To_Move(DirType facing) const;
 		virtual FireErrorType Can_Fire(TARGET target, int which) const;
 		virtual fixed Tiberium_Load(void) const;
+		virtual BuildingClass* Find_Best_Refinery(void) const;
 
 		/*
 		**	Coordinate inquiry functions. These are used for both display and
@@ -185,6 +194,7 @@ class UnitClass :	public DriveClass
 		virtual ActionType What_Action(ObjectClass const * object) const;
 		virtual void Active_Click_With(ActionType action, ObjectClass * object);
 		virtual void Active_Click_With(ActionType action, CELL cell);
+		virtual void Player_Assign_Mission(MissionType mission, TARGET target, TARGET destination);
 
 		/*
 		**	Combat related.
@@ -212,6 +222,7 @@ class UnitClass :	public DriveClass
 		virtual int Mission_Hunt(void);
 		virtual int Mission_Repair(void);
 		virtual int Mission_Move(void);
+		virtual int Mission_Enter(void);
 		void Rotation_AI(void);
 		void Firing_AI(void);
 		void Reload_AI(void);

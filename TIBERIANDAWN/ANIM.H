@@ -47,11 +47,12 @@ class AnimClass : public ObjectClass, private StageClass {
 
 		static void * AnimClass::operator new(size_t size);
 		static void AnimClass::operator delete(void *ptr);
-		AnimClass(void) : Class(0) {Owner=HOUSE_NONE;Object=0;};		// Default constructor does nothing.
-		AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay=0, unsigned char loop=1, bool alt=false);
+		AnimClass(void) : Class(0) {OwnerHouse=HOUSE_NONE;Object=0;};		// Default constructor does nothing.
+		AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay=0, char loop=1, bool alt=false);
 		virtual ~AnimClass(void);
 		operator AnimType(void) const {return Class->Type;};
 		virtual RTTIType What_Am_I(void) const {return RTTI_ANIM;};
+		virtual HousesType Owner(void) const {return OwnerHouse;};
 
 		/*---------------------------------------------------------------------
 		**	Member function prototypes.
@@ -62,14 +63,16 @@ class AnimClass : public ObjectClass, private StageClass {
 		void  Sort_Above(TARGET target);
 		void  Make_Invisible(void) {IsInvisible = true;};
 		void  Make_Visible(void) {IsInvisible = false;};
+		void  Kill_At(unsigned long long kill_time) {KillTime = kill_time;}
 
 		/*
 		** 2019/09/19 JAS
 		** Added functions for accessing which players can see this anim
 		*/
-		void Set_Visible_Flags(unsigned flags) { VisibleFlags = flags; }
+		void Set_Visible_Flags(unsigned flags);
 		unsigned Get_Visible_Flags() const { return (Delay == 0) ? VisibleFlags : 0; }
 
+		virtual void Set_Owner(HousesType owner);
 		virtual bool Can_Place_Here(COORDINATE ) const {return true;}
 		virtual bool Mark(MarkType mark=MARK_CHANGE);
 		virtual bool Render(bool forced);
@@ -114,13 +117,13 @@ class AnimClass : public ObjectClass, private StageClass {
 		**	is used when damage is caused by this animation during the middle of its
 		**	animation.
 		*/
-		HousesType Owner;
+		HousesType OwnerHouse;
 
 		/*
 		**	This counter tells how many more times the animation should loop before it
 		**	terminates.
 		*/
-		unsigned char Loops;
+		char Loops;
 
 	protected:
 		void Middle(void);
@@ -146,7 +149,9 @@ class AnimClass : public ObjectClass, private StageClass {
 		*/
 		unsigned IsBrandNew:1;
 
-		// Use alternate color when drawing?
+		/*
+		**	Use alternate color when drawing
+		*/
 		unsigned IsAlternate:1;
 
 		/*
@@ -192,9 +197,14 @@ class AnimClass : public ObjectClass, private StageClass {
 		AnimClass * VirtualAnim;
 
 		/*
+		**	Real-time point to kill this animation.
+		*/
+		unsigned long long KillTime;
+
+		/*
 		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
 		*/
-		unsigned char SaveLoadPadding[32];
+		unsigned char SaveLoadPadding[24];
 };
 
 

@@ -361,6 +361,64 @@ FireErrorType TurretClass::Can_Fire(TARGET target, int which) const
  * HISTORY:                                                                                    *
  *   12/28/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
+FireDataType TurretClass::Fire_Data(int which) const
+{
+	COORDINATE coord = Center_Coord();
+	int dist = 0;
+
+	switch (Class->Type) {
+		case UNIT_GUNBOAT:
+			coord = Coord_Move(coord, PrimaryFacing.Current(), Pixel2Lepton[Class->TurretOffset]);
+			dist = 0x0060;
+			break;
+
+		case UNIT_ARTY:
+			coord = Coord_Move(coord, DIR_N, 0x0040);
+			dist = 0x0060;
+			break;
+
+		case UNIT_FTANK:
+			dist = 0x30;
+			break;
+
+		case UNIT_HTANK:
+			coord = Coord_Move(coord, DIR_N, 0x0040);
+			if (which == 0) {
+				dist = 0x00C0;
+			} else {
+				dist = 0x0008;
+			}
+			break;
+
+		case UNIT_LTANK:
+			coord = Coord_Move(coord, DIR_N, 0x0020);
+			dist = 0x00C0;
+			break;
+
+		case UNIT_MTANK:
+			coord = Coord_Move(coord, DIR_N, 0x0030);
+			dist = 0x00C0;
+			break;
+
+		case UNIT_APC:
+		case UNIT_JEEP:
+		case UNIT_BUGGY:
+			coord = Coord_Move(coord, DIR_N, 0x0030);
+			dist = 0x0030;
+			break;
+
+#ifdef PETROGLYPH_EXAMPLE_MOD
+		case UNIT_NUKE_TANK:
+			coord = Coord_Move(coord, DIR_N, 0x00A0);
+			dist = 0x00A0;
+			break;
+#endif //PETROGLYPH_EXAMPLE_MOD
+	}
+
+	return {coord,dist};
+}
+
+
 COORDINATE TurretClass::Fire_Coord(int which) const
 {
 	COORDINATE coord = Center_Coord();

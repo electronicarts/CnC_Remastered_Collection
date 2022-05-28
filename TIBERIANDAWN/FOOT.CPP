@@ -305,14 +305,20 @@ bool FootClass::Mark(MarkType mark)
 		/*
 		**	Inform the map of the refresh, occupation, and overlap
 		**	request.
+		**	Special case is fixed-wing aircraft, which are never placed
+		**	or picked up since they can never land.
 		*/
 		switch (mark) {
 			case MARK_UP:
-				Map.Pick_Up(cell, this);
+				if (What_Am_I() != RTTI_AIRCRAFT || !((AircraftClass*)this)->Class->IsFixedWing) {
+					Map.Pick_Up(cell, this);
+				}
 				break;
 
 			case MARK_DOWN:
-				Map.Place_Down(cell, this);
+				if (What_Am_I() != RTTI_AIRCRAFT || !((AircraftClass*)this)->Class->IsFixedWing) {
+					Map.Place_Down(cell, this);
+				}
 				break;
 
 			default:
@@ -947,8 +953,10 @@ void FootClass::Approach_Target(void)
 			/*
 			**	If a suitable intermediate location was found, then head toward it.
 			**	Otherwise, head toward the enemy unit directly.
+			**	Infantry always head towards the target since they can enter a cell
+			**	in range, but still not be able to hit the target if the spot is out of range.
 			*/
-			if (found) {
+			if (found && What_Am_I() != RTTI_INFANTRY) {
 				Assign_Destination(::As_Target(trycell));
 			} else {
 				Assign_Destination(TarCom);
@@ -991,6 +999,20 @@ int FootClass::Mission_Guard_Area(void)
 	}
 
 	/*
+	**	Ensure units aren't trying to guard cells off the map.
+	*/
+	if (Target_Legal(NavCom) && Is_Target_Cell(NavCom)) {
+		CELL cell = As_Cell(NavCom);
+		int x = Cell_X(cell);
+		int y = Cell_Y(cell);
+		if (x < Map.MapCellX || y < Map.MapCellY || x >= (Map.MapCellX + Map.MapCellWidth) || y >= (Map.MapCellY + Map.MapCellHeight)) {
+			Assign_Target(TARGET_NONE);
+			Assign_Destination(TARGET_NONE);
+			ArchiveTarget = ::As_Target(Coord_Cell(Coord));
+		}
+	}
+
+	/*
 	**	Make sure that the unit has not strayed too far from the home position.
 	**	If it has, then race back to it.
 	*/
@@ -1006,6 +1028,7 @@ int FootClass::Mission_Guard_Area(void)
 		Target_Something_Nearby(THREAT_AREA);
 		Coord = old;
 		if (Target_Legal(TarCom)) return(1);
+		Random_Animate();
 	} else {
 		Approach_Target();
 	}
@@ -1258,7 +1281,7 @@ void FootClass::Active_Click_With(ActionType action, ObjectClass * object)
 			break;
 
 		case ACTION_ENTER:
-			if (Can_Player_Move() && object && object->Is_Techno() && !((RadioClass *)object)->In_Radio_Contact()) {
+			if (Can_Player_Move() && object && object->Is_Techno() /*&& !((RadioClass *)object)->In_Radio_Contact()*/) {
 				Player_Assign_Mission(MISSION_ENTER, TARGET_NONE, object->As_Target());
 			}
 			break;
@@ -1319,7 +1342,7 @@ void FootClass::Active_Click_With(ActionType action, CELL cell)
 		case ACTION_MOVE:
 			if (AllowVoice) {
 				COORDINATE coord = Map.Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y());
-				OutList.Add(EventClass(ANIM_MOVE_FLASH, PlayerPtr->Class->House, coord));
+				OutList.Add(EventClass(ANIM_MOVE_FLASH, PlayerPtr->Class->House, coord, 1 << PlayerPtr->Class->House));
 			}
 			// Fall into next case.
 
@@ -1422,6 +1445,8 @@ void FootClass::Per_Cell_Process(bool center)
 		}
 //	}
 
+	Map[Coord_Cell(Coord)].Goodie_Check(this, true);
+
 	TechnoClass::Per_Cell_Process(center);
 }
 
@@ -1499,6 +1524,18 @@ RadioMessageType FootClass::Receive_Message(RadioClass * from, RadioMessageType 
 	switch (message) {
 
 		/*
+		**	Answers if this object is located on top of a service depot.
+		*/
+		case RADIO_ON_DEPOT:
+			if (Map[Coord_Cell(Center_Coord())].Cell_Building() != NULL) {
+				BuildingClass const * building = Map[Coord_Cell(Center_Coord())].Cell_Building();
+				if (*building == STRUCT_REPAIR) {
+					return(RADIO_ROGER);
+				}
+			}
+			return(RADIO_NEGATIVE);
+
+		/*
 		**	Intercept the repair request and if this object is moving, then no repair
 		**	is possible.
 		*/
@@ -1524,7 +1561,7 @@ RadioMessageType FootClass::Receive_Message(RadioClass * from, RadioMessageType 
 				Assign_Mission(MISSION_GUARD);
 			}
 			if (!IsRotating && !Target_Legal(NavCom)) {
-				Scatter(0, true);
+				Scatter(0, true, true);
 			}
 			break;
 
@@ -1590,35 +1627,51 @@ RadioMessageType FootClass::Receive_Message(RadioClass * from, RadioMessageType 
 int FootClass::Mission_Enter(void)
 {
 	/*
-	**	If radio contact has not yet been established with the transport, try to
-	**	establish contact now.
+	**	Find out who to coordinate with. If in radio contact, then this the transporter is
+	**	defined. If not in radio contact, then try the archive target value to see if that
+	**	is suitable.
 	*/
-	if (!In_Radio_Contact()) {
-		TechnoClass * techno = As_Techno(ArchiveTarget);
-		if (!techno) techno = As_Techno(NavCom);
-		if (techno) {
+	TechnoClass * contact = Contact_With_Whom();
+	if (contact == NULL) {
+		contact = As_Techno(ArchiveTarget);
+	}
+	if (contact == NULL) {
+		contact = As_Techno(NavCom);
+	}
 
-			/*
-			**	If the transport is already in radio contact, do nothing. Try to
-			**	establish radio contact later.
-			*/
-			if (Transmit_Message(RADIO_HELLO, techno) == RADIO_ROGER) {
-				Assign_Destination(TARGET_NONE);
-			}
-		} else {
-			ArchiveTarget = TARGET_NONE;
+	/*
+	**	If in contact, then let the transporter handle the movement coordination.
+	*/
+	if (contact != NULL) {
+
+		/*
+		**	If the transport says to "bug off", then abort the enter mission. The transport may
+		**	likely say all is 'ok' with the "RADIO ROGER", then try again later.
+		*/
+		if (Transmit_Message(RADIO_DOCKING, contact) != RADIO_ROGER && !IsTethered) {
+			Transmit_Message(RADIO_OVER_OUT);
 			Enter_Idle_Mode();
 		}
 
 	} else {
 
 		/*
-		**	Since radio contact exists with the transport, maintain a dialogue so that
-		**	the transport can give proper instructions to the passenger.
+		**	Since there is no potential object to enter, then abort this
+		**	mission with some default standby mission.
 		*/
-		if (Transmit_Message(RADIO_DOCKING) != RADIO_ROGER) {
-			Transmit_Message(RADIO_OVER_OUT);
-			Enter_Idle_Mode();
+		if (MissionQueue == MISSION_NONE) {
+			/*
+			**	If this is a harvester, then return to harvesting.
+			**	Set a hacky target so we know to skip to the proper state.
+			*/
+			if (What_Am_I() == RTTI_UNIT && ((UnitClass*)this)->Class->IsToHarvest) {
+				Assign_Mission(MISSION_HARVEST);
+				Assign_Target(As_Target());
+				Assign_Destination(TARGET_NONE);
+			} else {
+				ArchiveTarget = TARGET_NONE;
+				Enter_Idle_Mode();
+			}
 		}
 	}
 	return(TICKS_PER_SECOND/2);

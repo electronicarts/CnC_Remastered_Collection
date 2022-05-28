@@ -521,8 +521,8 @@ void DriveClass::Assign_Destination(TARGET target)
 	**	facility is currently not involved with some other unit (radio or unloading).
 	*/
 	if (b && *b == STRUCT_REPAIR) {
-		if (b->In_Radio_Contact()) {
-			target = 0;
+		if (b->In_Radio_Contact() && (b->Contact_With_Whom() != this)) {
+			ArchiveTarget = target;
 		} else {
 
 			/*
@@ -962,9 +962,17 @@ bool DriveClass::Start_Of_Move(void)
 				/*
 				**	If a basic path could be found, but the immediate move destination is
 				**	blocked by a friendly temporary blockage, then cause that blockage
-				**	to scatter.
+				**	to scatter. If the destination is also one cell away, then scatter
+				**	regardless of direction.
 				*/
-				CELL cell = Adjacent_Cell(Coord_Cell(Center_Coord()), PrimaryFacing.Current());
+				CELL ourcell = Coord_Cell(Center_Coord());
+				CELL navcell = As_Cell(NavCom);
+				CELL cell = -1;
+				if (::Distance(ourcell, navcell) < 2) {
+					cell = navcell;
+				} else {
+					cell = Adjacent_Cell(ourcell, PrimaryFacing.Current());
+				}
 				if (Map.In_Radar(cell)) {
 					if (Can_Enter_Cell(cell) == MOVE_TEMP) {
 						CellClass * cellptr = &Map[cell];
@@ -1598,12 +1606,18 @@ void DriveClass::Mark_Track(COORDINATE headto, MarkType type)
 
 					if (TrackIndex < cellidx && cellidx != -1) {
 						COORDINATE offset = Smooth_Turn(ptr[cellidx].Offset, &dir);
-						Map[Coord_Cell(offset)].Flag.Occupy.Vehicle = value;
+						CELL cell = Coord_Cell(offset);
+						if ((unsigned)cell < MAP_CELL_TOTAL) {
+							Map[cell].Flag.Occupy.Vehicle = value;
+						}
 					}
 				}
 			}
 		}
-		Map[Coord_Cell(headto)].Flag.Occupy.Vehicle = value;
+		CELL cell = Coord_Cell(headto);
+		if ((unsigned)cell < MAP_CELL_TOTAL) {
+			Map[cell].Flag.Occupy.Vehicle = value;
+		}
 	}
 }
 

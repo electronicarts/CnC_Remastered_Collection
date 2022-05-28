@@ -489,6 +489,25 @@ bool TechnoClass::Is_Allowed_To_Recloak(void) const
  * HISTORY:                                                                                    *
  *   07/29/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
+FireDataType TechnoClass::Fire_Data(int which) const
+{
+	assert(IsActive);
+
+	TechnoTypeClass const * tclass = Techno_Type_Class();
+
+	int dist = 0;
+	if (which == 0) {
+		dist = tclass->PrimaryOffset;
+	} else {
+		dist = tclass->SecondaryOffset;
+	}
+
+	COORDINATE coord = Coord_Move(Center_Coord(), DIR_N, tclass->VerticalOffset + Height);
+	coord = Coord_Move(coord, DIR_E, tclass->HorizontalOffset);
+
+	return{coord,dist};
+}
+
 COORDINATE TechnoClass::Fire_Coord(int which) const
 {
 	assert(IsActive);
@@ -638,80 +657,6 @@ TechnoClass::TechnoClass(RTTIType rtti, int id, HousesType house) :
 
 
 /***********************************************************************************************
- * TechnoClass::Time_To_Build -- Determines the time it would take to build this.              *
- *                                                                                             *
- *    Use this routine to determine the amount of time it would take to build an object of     *
- *    this type.                                                                               *
- *                                                                                             *
- * INPUT:   none                                                                               *
- *                                                                                             *
- * OUTPUT:  Returns with the time it should take (unmodified by outside factors) to build      *
- *          this object. The time is expressed in game frames.                                 *
- *                                                                                             *
- * WARNINGS:   The time will usually be modified by power status and handicap rating for the   *
- *             owning house. The value returned is merely the raw unmodified time to build.    *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   07/29/1996 JLB : Created.                                                                 *
- *   09/27/1996 JLB : Takes into account the power availability.                               *
- *=============================================================================================*/
-//#define UNIT_BUILD_BIAS fixed(5,4)
-//#define UNIT_BUILD_BIAS fixed(6,4)
-#define UNIT_BUILD_BIAS fixed(1,1)
-//#define UNIT_BUILD_BIAS fixed(5,1)
-
-extern int UnitBuildPenalty;
-
-int TechnoClass::Time_To_Build(void) const
-{
-	int val = Class_Of().Time_To_Build();
-
-#ifdef FIXIT_VERSION_3
-	if (Session.Type == GAME_NORMAL ) {
-#else
-	if (Session.Type == GAME_NORMAL ||
-					PlayingAgainstVersion == VERSION_RED_ALERT_104 ||
-		 			PlayingAgainstVersion == VERSION_RED_ALERT_107){
-#endif
-		val *= House->BuildSpeedBias;
-	}else{
-		if (What_Am_I() == RTTI_BUILDING || What_Am_I() == RTTI_INFANTRY) {
-			val *= House->BuildSpeedBias;
-		} else {
-			val *= House->BuildSpeedBias * fixed (UnitBuildPenalty, 100);	//UNIT_BUILD_BIAS;
-		}
-	}
-
-
-	/*
-	**	Adjust the time to build based on the power output of the owning house.
-	*/
-	fixed power = House->Power_Fraction();
-	if (power > 1) power = 1;
-	if (power < 1 && power > fixed::_3_4) power = fixed::_3_4;
-	if (power < fixed::_1_2) power = fixed::_1_2;
-	power.Inverse();
-	val *= power;
-
-	int divisor = House->Factory_Count(What_Am_I());
-	if (divisor != 0) {
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-// Hack: allow the multiple-factory bonus, but only up to two factories if
-//			this is an AM<->AM game.
-		if(NewUnitsEnabled) {
-			val /= min(divisor,2);
-		} else {
-			val /= divisor;
-		}
-#else
-		val /= divisor;
-#endif
-	}
-	return(val);
-}
-
-
-/***********************************************************************************************
  * TechnoClass::Is_Visible_On_Radar -- Is this object visible on player's radar screen?        *
  *                                                                                             *
  *    Use this routine to determine if this object should be visible on the player's radar     *
@@ -741,7 +686,7 @@ bool TechnoClass::Is_Visible_On_Radar(void) const
 			}
 		}
 	}
-	if (!Techno_Type_Class()->IsInvisible && (Cloak != CLOAKED || House->Is_Ally(PlayerPtr))) {
+	if (!Is_Cloaked(PlayerPtr, true)) {
 		return(true);
 	}
 	return(false);
@@ -1047,9 +992,14 @@ RadioMessageType TechnoClass::Receive_Message(RadioClass * from, RadioMessageTyp
 				/*
 				**	If there is sufficient money to repair the unit one step, then do so.
 				**	Otherwise return with a "can't complete" radio response.
+				**	Special case: in single-player campaigns, also try to use the repair pad house's money.
 				*/
-				if (House->Available_Money() >= cost) {
-					House->Spend_Money(cost);
+				HouseClass* house = House;
+				if (Session.Type == GAME_NORMAL && house->Available_Money() < cost) {
+					house = HouseClass::As_Pointer(from->Owner());
+				}
+				if (house != NULL && house->Available_Money() >= cost) {
+					house->Spend_Money(cost);
 					Strength += step;
 
 					/*
@@ -1162,7 +1112,7 @@ void TechnoClass::Draw_It(int x, int y, WindowNumberType window) const
 	int width, height;
 	Class_Of().Dimensions(width, height);
 
-	const bool show_health_bar = (Strength > 0) && (Is_Selected_By_Player() ||
+	const bool show_health_bar = (Strength > 0) && !Is_Cloaked(PlayerPtr) && (Is_Selected_By_Player() ||
 		((Rule.HealthBarDisplayMode == RulesClass::HB_DAMAGED) && (Strength < Techno_Type_Class()->MaxStrength)) ||
 		(Rule.HealthBarDisplayMode == RulesClass::HB_ALWAYS));
 
@@ -1327,8 +1277,8 @@ bool TechnoClass::In_Range(TARGET target, int which, bool reciprocal_check) cons
 		if (building != NULL) {
 			range += ((building->Class->Width() + building->Class->Height()) * (ICON_LEPTON_W / 4));
 		}
-
-		if (::Distance(Fire_Coord(which), As_Coord(target)) <= range) {
+		FireDataType data = Fire_Data(which);
+		if (MAX(0, ::Distance(data.Center, As_Coord(target)) - data.Distance) <= range) {
 			return(true);
 		}
 
@@ -1383,8 +1333,8 @@ bool TechnoClass::In_Range(ObjectClass const * target, int which, bool reciproca
 			BuildingClass const * building = (BuildingClass const *)target;
 			range += ((building->Class->Width() + building->Class->Height()) * (ICON_LEPTON_W / 4));
 		}
-
-		if (::Distance(Fire_Coord(which), target->Center_Coord()) <= range) {
+		FireDataType data = Fire_Data(which);
+		if (MAX(0, ::Distance(data.Center, target->Center_Coord()) - data.Distance) <= range) {
 			return(true);
 		}
 
@@ -1580,7 +1530,7 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	/*
 	**	If the object is cloaked, then it isn't a legal target.
 	*/
-	if (object->Cloak == CLOAKED) {
+	if (object->Is_Cloaked(this)) {
 		BEnd(BENCH_EVAL_OBJECT);
 		return(false);
 	}
@@ -1609,16 +1559,12 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	**	object is a friend.  Unless we're a medic, of course.  But then,
 	** only consider it a target if it's injured.
 	*/
-	if (House->Is_Ally(object)) {
-		if (Combat_Damage() < 0) {
-			if (object->Health_Ratio() == Rule.ConditionGreen) {
-				BEnd(BENCH_EVAL_OBJECT);
-				return(false);
-			}
-		} else {
-			BEnd(BENCH_EVAL_OBJECT);
-			return(false);
-		}
+	bool is_ally = House->Is_Ally(object);
+	bool is_medic = Combat_Damage() < 0;
+	bool green_health = object->Health_Ratio() == Rule.ConditionGreen;
+	if ((is_ally && (!is_medic || green_health)) || (!is_ally && is_medic)) {
+		BEnd(BENCH_EVAL_OBJECT);
+		return(false);
 	}
 
 	/*
@@ -1701,7 +1647,7 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	**	If the scan is limited to capturable buildings only, then bail if the examined
 	**	object isn't a capturable building.
 	*/
-	if ((method & THREAT_CAPTURE) && (otype != RTTI_BUILDING || !((BuildingTypeClass const *)tclass)->IsCaptureable)) {
+	if ((method & THREAT_CAPTURE) && (otype != RTTI_BUILDING || !object->Can_Capture())) {
 		BEnd(BENCH_EVAL_OBJECT);
 		return(false);
 	}
@@ -2087,6 +2033,27 @@ int TechnoClass::Evaluate_Just_Cell(CELL cell) const
 	*/
 	BEnd(BENCH_EVAL_WALL);
 	return(Weapon_Range(0) - Distance(Cell_Coord(cell)));
+}
+
+
+bool TechnoClass::Is_Cloaked(HousesType house, bool check_invisible) const
+{
+	const bool is_invisible = check_invisible && Techno_Type_Class()->IsInvisible;
+	return !House->Is_Ally(house) && ((Cloak == CLOAKED) || is_invisible);
+}
+
+
+bool TechnoClass::Is_Cloaked(HouseClass const * house, bool check_invisible) const
+{
+	const bool is_invisible = check_invisible && Techno_Type_Class()->IsInvisible;
+	return !House->Is_Ally(house) && ((Cloak == CLOAKED) || is_invisible);
+}
+
+
+bool TechnoClass::Is_Cloaked(ObjectClass const * object, bool check_invisible) const
+{
+	const bool is_invisible = check_invisible && Techno_Type_Class()->IsInvisible;
+	return !House->Is_Ally(object) && ((Cloak == CLOAKED) || is_invisible);
 }
 
 
@@ -2522,7 +2489,7 @@ void TechnoClass::AI(void)
 	**	If for some strange reason, the computer is firing upon itself, then
 	**	tell it not to.
 	*/
-	if (!House->IsHuman && As_Techno(TarCom) && As_Techno(TarCom)->House->Is_Ally(this)) {
+	if (!House->IsHuman && As_Techno(TarCom) && As_Techno(TarCom)->House->Is_Ally(this) && Combat_Damage() >= 0) {
 //#ifdef FIXIT_CSII	//	checked - ajw 9/28/98 (commented out)
 //if(What_Am_I() == RTTI_INFANTRY && *(InfantryClass *)this==INFANTRY_GENERAL && Session.Type==GAME_NORMAL && House->Class->House==HOUSE_UKRAINE) {
 //} else
@@ -2847,9 +2814,9 @@ FireErrorType TechnoClass::Can_Fire(TARGET target, int which) const
 	ObjectClass * object = As_Object(target);
 
 	/*
-	**	If the object is completely cloaked, then you can't fire on it.
+	**	If an enemy object is completely cloaked, then you can't fire on it.
 	*/
-	if (object != NULL && object->Is_Techno() && ((TechnoClass *)object)->Cloak == CLOAKED) {
+	if (object != NULL && object->Is_Techno() && ((TechnoClass *)object)->Is_Cloaked(this)) {
 		return(FIRE_CANT);
 	}
 
@@ -3411,6 +3378,13 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 			}
 		}
 
+		/*
+		** For electric zaps, immediately perform bullet logic.
+		*/
+		if (weapon->IsElectric) {
+			bullet->AI();
+		}
+
 #endif
 	}
 
@@ -3458,8 +3432,9 @@ void TechnoClass::Player_Assign_Mission(MissionType mission, TARGET target, TARG
 		if (Is_Foot()) {
 			const FootClass* foot = (const FootClass*)this;
 			if (foot->Group < MAX_TEAMS) {
-				speed = TeamSpeed[foot->Group];
-				maxspeed = TeamMaxSpeed[foot->Group];
+				TeamFormDataStruct& team_form_data = TeamFormData[foot->Owner()];
+				speed = team_form_data.TeamSpeed[foot->Group];
+				maxspeed = team_form_data.TeamMaxSpeed[foot->Group];
 			}
 		}
 		Queue_Mission(TargetClass(this), mission, target, destination, speed, maxspeed);
@@ -3592,7 +3567,7 @@ ActionType TechnoClass::What_Action(ObjectClass const * object) const
 						((weapon != NULL) && weapon->Bullet->IsAntiAircraft) ||
 						(object->Is_Techno() && (((TechnoClass *)object)->Height == 0))) {
 						if (Can_Player_Move() || In_Range(object, primary)) {
-							if (In_Range(object, primary) || (What_Am_I() == RTTI_INFANTRY && ((InfantryClass *)this)->Class->IsCapture && object->What_Am_I() == RTTI_BUILDING && ((BuildingClass *)object)->Class->IsCaptureable)) {
+							if (In_Range(object, primary) || (What_Am_I() == RTTI_INFANTRY && ((InfantryClass *)this)->Class->IsCapture && object->What_Am_I() == RTTI_BUILDING && object->Can_Capture())) {
 								return(ACTION_ATTACK);
 							} else {
 								if (!Can_Player_Move()) {
@@ -4260,7 +4235,7 @@ void TechnoClass::Record_The_Kill(TechnoClass * source)
  *   07/06/1995 JLB : Created.                                                                 *
  *   09/28/1995 JLB : Uses map scan function.                                                  *
  *=============================================================================================*/
-CELL TechnoClass::Nearby_Location(TechnoClass const * techno) const
+CELL TechnoClass::Nearby_Location(TechnoClass const * techno, int locationmod) const
 {
 	assert(IsActive);
 
@@ -4276,7 +4251,7 @@ CELL TechnoClass::Nearby_Location(TechnoClass const * techno) const
 		cell = Coord_Cell(Center_Coord());
 	}
 
-	return(Map.Nearby_Location(cell, speed, Map[cell].Zones[Techno_Type_Class()->MZone], Techno_Type_Class()->MZone));
+	return(Map.Nearby_Location(cell, speed, Map[cell].Zones[Techno_Type_Class()->MZone], Techno_Type_Class()->MZone, false, locationmod));
 }
 
 
@@ -6494,9 +6469,93 @@ int TechnoTypeClass::Get_Ownable(void) const
  * HISTORY:                                                                                    *
  *   07/29/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-int TechnoTypeClass::Time_To_Build(void) const
+ //#define UNIT_BUILD_BIAS fixed(5,4)
+ //#define UNIT_BUILD_BIAS fixed(6,4)
+#define UNIT_BUILD_BIAS fixed(1,1)
+//#define UNIT_BUILD_BIAS fixed(5,1)
+
+extern int UnitBuildPenalty;
+
+int TechnoTypeClass::Time_To_Build(HousesType house) const
 {
-	return(Cost * Rule.BuildSpeedBias * fixed(TICKS_PER_MINUTE, 1000));
+	int time = Cost * Rule.BuildSpeedBias * fixed(TICKS_PER_MINUTE, 1000);
+
+	HouseClass* hptr = HouseClass::As_Pointer(house);
+	if (!hptr || !hptr->IsActive) {
+		return time;
+	}
+
+#ifdef FIXIT_VERSION_3
+	if (Session.Type == GAME_NORMAL) {
+#else
+	if (Session.Type == GAME_NORMAL ||
+		PlayingAgainstVersion == VERSION_RED_ALERT_104 ||
+		PlayingAgainstVersion == VERSION_RED_ALERT_107) {
+#endif
+		time *= hptr->BuildSpeedBias;
+	}
+	else {
+		
+		/*
+		** New feature - Turkey has a 10% build speed bonus even though it isn't specified in the rules
+		*/
+		if (hptr->ActLike == HOUSE_TURKEY) {
+			if (hptr->BuildSpeedBias == fixed(1)) {
+				time *= 9;
+				time /= 10;
+			}
+		}
+		
+		if (What_Am_I() == RTTI_BUILDINGTYPE || What_Am_I() == RTTI_INFANTRYTYPE) {
+			time *= hptr->BuildSpeedBias;
+		}
+		else {
+			time *= hptr->BuildSpeedBias * fixed(UnitBuildPenalty, 100);	//UNIT_BUILD_BIAS;
+		}
+	}
+
+	/*
+	**	Adjust time according to IQ setting of computer controlled house. The
+	**	build time will range from double normal time at the slowest to
+	**	just normal time at the fastest.
+	*/
+	if (!hptr->IsHuman && Rule.Diff[hptr->Difficulty].IsBuildSlowdown) {
+		time = time * Inverse(fixed(hptr->IQ + Rule.MaxIQ, Rule.MaxIQ * 2));
+	}
+
+	/*
+	**	Adjust the time to build based on the power output of the owning house.
+	*/
+	fixed power = hptr->Power_Fraction();
+	fixed scale(1);
+	if (power == 0) {
+		scale = fixed(4, 1);
+	}
+	else if (power < fixed::_1_2) {
+		scale = fixed(5, 2);
+	}
+	else if (power < 1) {
+		scale = fixed(3, 2);
+	}
+	time *= scale;
+
+	int divisor = hptr->Factory_Count(What_Am_I());
+	if (divisor != 0) {
+#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
+		// Hack: allow the multiple-factory bonus, but only up to two factories if
+		//			this is an AM<->AM game.
+		if (NewUnitsEnabled) {
+			time /= min(divisor, 2);
+		}
+		else {
+			time /= divisor;
+		}
+#else
+		time /= divisor;
+#endif
+	}
+
+	return(time);
 }
 
 

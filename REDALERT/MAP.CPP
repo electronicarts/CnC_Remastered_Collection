@@ -1026,6 +1026,16 @@ void MapClass::Logic(void)
 	**	Tiberium cells that can grow or spread.
 	*/
 	int subcount = MAP_CELL_TOTAL / (Rule.GrowthRate * TICKS_PER_MINUTE);
+
+	/*
+	** Use the Tiberium setting as a multiplier on growth rate. ST - 7/1/2020 3:05PM
+	*/
+	if (Session.Type == GAME_GLYPHX_MULTIPLAYER) {
+		if (Session.Options.Tiberium > 1) {
+			subcount *= Session.Options.Tiberium;
+		}
+	}		 
+
 	subcount = max(subcount, 1);
 	int index;
 	for (index = TiberiumScan; index < MAP_CELL_TOTAL; index++) {
@@ -1416,11 +1426,11 @@ ObjectClass * MapClass::Close_Object(COORDINATE coord) const
 			while (o != NULL) {
 
 				/*
-				**	Special case check to ignore cloaked object if not owned by the player.
+				**	Special case check to ignore cloaked object if not allied with the player.
 				*/
 				// Change for client/server multiplayer. ST - 8/7/2019 10:35AM
 				//if (!o->Is_Techno() || ((TechnoClass *)o)->IsOwnedByPlayer || ((TechnoClass *)o)->Cloak != CLOAKED) {
-				if (!o->Is_Techno() || ((TechnoClass *)o)->Is_Owned_By_Player() || ((TechnoClass *)o)->Cloak != CLOAKED) {
+				if (!o->Is_Techno() || !((TechnoClass *)o)->Is_Cloaked(PlayerPtr)) {
 					int d=-1;
 					if (o->What_Am_I() == RTTI_BUILDING) {
 						d = Distance(coord, Cell_Coord(newcell));
@@ -1445,7 +1455,7 @@ ObjectClass * MapClass::Close_Object(COORDINATE coord) const
 		AircraftClass * aircraft = Aircraft.Ptr(index);
 
 		if (aircraft->In_Which_Layer() != LAYER_GROUND) {
-			if (aircraft->Is_Owned_By_Player() || (aircraft->Cloak != CLOAKED)) {
+			if (!aircraft->Is_Cloaked(PlayerPtr)) {
 				int d = Distance(coord, Coord_Add(aircraft->Center_Coord(), XY_Coord(0, -aircraft->Height)));
 				if (d >= 0 && (!object || d < distance)) {
 					distance = d;
@@ -1683,7 +1693,7 @@ int MapClass::Zone_Span(CELL cell, int zone, MZoneType check)
  * HISTORY:                                                                                    *
  *   10/05/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-CELL MapClass::Nearby_Location(CELL cell, SpeedType speed, int zone, MZoneType check, bool checkflagged) const
+CELL MapClass::Nearby_Location(CELL cell, SpeedType speed, int zone, MZoneType check, bool checkflagged, int locationmod) const
 {
 	CELL topten[10];
 	int count = 0;
@@ -1767,7 +1777,7 @@ CELL MapClass::Nearby_Location(CELL cell, SpeedType speed, int zone, MZoneType c
 	}
 
 	if (count > 0) {
-		return(topten[Frame % count]);
+		return(topten[(Frame+locationmod) % count]);
 	}
 	return(0);
 }

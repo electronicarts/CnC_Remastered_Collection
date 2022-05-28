@@ -165,6 +165,7 @@ class ObjectClass : public AbstractClass
 		virtual bool Can_Repair(void) const;
 		virtual bool Can_Demolish(void) const;
 		virtual bool Can_Demolish_Unit(void) const;
+		virtual bool Can_Capture(void) const;
 		virtual bool Can_Player_Fire(void) const;
 		virtual bool Can_Player_Move(void) const;
 
@@ -177,6 +178,7 @@ class ObjectClass : public AbstractClass
 		virtual COORDINATE Center_Coord(void) const;
 		virtual COORDINATE Render_Coord(void) const;
 		virtual COORDINATE Sort_Y(void) const;
+		virtual FireDataType Fire_Data(int which) const;
 		virtual COORDINATE Fire_Coord(int which) const;
 		virtual COORDINATE Exit_Coord(void) const;
 

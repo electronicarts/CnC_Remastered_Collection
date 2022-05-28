@@ -977,6 +977,10 @@ void __cdecl Prog_End(const char *why, bool fatal)
 		*((int*)0) = 0;
 	}
 
+	if (Session.Type == GAME_GLYPHX_MULTIPLAYER) {
+		return;
+	}
+
 	Sound_End();
 	if (WWMouse) {
 		delete WWMouse;

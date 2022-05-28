@@ -190,7 +190,8 @@ void Explosion_Damage(COORDINATE coord, int strength, TechnoClass * source, Warh
 		**	further than one cell away.
 		*/
 		if (i != FACING_NONE) {
-			cellptr = &Map[cell].Adjacent_Cell(i);
+			cellptr = Map[cell].Adjacent_Cell(i);
+			if (!cellptr) continue;
 		}
 
 		/*

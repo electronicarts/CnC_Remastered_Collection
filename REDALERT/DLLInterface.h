@@ -29,7 +29,7 @@ struct CarryoverObjectStruct;
 ** 
 ** 
 */
-#define CNC_DLL_API_VERSION		0x100
+#include "DLLInterfaceVersion.h"
 
 
 
@@ -425,7 +425,11 @@ enum InputRequestEnum {
 	INPUT_REQUEST_SELL_AT_POSITION,
 	INPUT_REQUEST_SELECT_AT_POSITION,
 	INPUT_REQUEST_COMMAND_AT_POSITION,
-	INPUT_REQUEST_SPECIAL_KEYS
+	INPUT_REQUEST_SPECIAL_KEYS,
+	INPUT_REQUEST_MOD_GAME_COMMAND_1_AT_POSITION,
+	INPUT_REQUEST_MOD_GAME_COMMAND_2_AT_POSITION,
+	INPUT_REQUEST_MOD_GAME_COMMAND_3_AT_POSITION,
+	INPUT_REQUEST_MOD_GAME_COMMAND_4_AT_POSITION,
 };
 
 
@@ -473,6 +477,18 @@ enum UnitRequestEnum {
 enum GameRequestEnum {
 	INPUT_GAME_MOVIE_DONE,
 	INPUT_GAME_LOADING_DONE,
+};
+
+
+/**************************************************************************************
+**
+**  Beacon Requests
+**
+**
+*/
+enum BeaconRequestEnum {
+	INPUT_BEACON_NONE,
+	INPUT_BEACON_PLACE,
 };
 
 
@@ -627,6 +643,7 @@ struct EventCallbackStruct {
 			//
 			// Single-player data
 			//
+			bool IsHuman;
 			bool PlayerWins; //This should specify player id
 			const char* MovieName;
 			const char* MovieName2;
@@ -731,7 +748,7 @@ struct CNCMultiplayerOptionsStruct {
 	int MPlayerCount;						// # of human players in this game
 	int MPlayerBases;						// 1 = bases are on for this scenario
 	int MPlayerCredits;					// # credits everyone gets
-	int MPlayerTiberium;					// 1 = tiberium enabled for this scenario
+	int MPlayerTiberium;					// >0 = tiberium enabled for this scenario
 	int MPlayerGoodies;					// 1 = goodies enabled for this scenario
 	int MPlayerGhosts;					// 1 = houses with no players will still play
 	int MPlayerSolo;						// 1 = allows a single-player net game
@@ -743,6 +760,7 @@ struct CNCMultiplayerOptionsStruct {
 	bool MPlayerAftermathUnits;
 	bool CaptureTheFlag;
 	bool DestroyStructures;				// New early win condition via destroying all a player's structures
+	bool ModernBalance;
 };
 
 

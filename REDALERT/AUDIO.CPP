@@ -281,6 +281,8 @@ struct SoundEffectNameStruct {
 	{"MADEXPLO",	20,	IN_NOVAR},	// VOC_MAD_EXPLODE		MAD tank explodes
 	{"SHKTROP1",	20,	IN_NOVAR},	// VOC_SHOCK_TROOP1		Shock Trooper fires
 
+	{"BEACON", 		10,	IN_NOVAR},	// VOC_BEACON			Beacon sound.
+
 #endif
 };
 

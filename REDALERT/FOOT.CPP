@@ -946,8 +946,12 @@ void FootClass::Approach_Target(void)
 			/*
 			**	If a suitable intermediate location was found, then head toward it.
 			**	Otherwise, head toward the enemy unit directly.
+			**	Infantry always head towards the target since they can enter a cell
+			**	in range, but still not be able to hit the target if the spot is out of range.
 			*/
-			if (found) {
+			if (What_Am_I() == RTTI_INFANTRY) {
+				Assign_Destination(TarCom);
+			} else if (found) {
 				Assign_Destination(::As_Target(trycell));
 			} else {
 
@@ -1003,6 +1007,20 @@ int FootClass::Mission_Guard_Area(void)
 	*/
 	if (!Target_Legal(ArchiveTarget)) {
 		ArchiveTarget = ::As_Target(Coord);
+	}
+
+	/*
+	**	Ensure units aren't trying to guard cells off the map.
+	*/
+	if (Target_Legal(NavCom) && Is_Target_Cell(NavCom)) {
+		CELL cell = As_Cell(NavCom);
+		int x = Cell_X(cell);
+		int y = Cell_Y(cell);
+		if (x < Map.MapCellX || y < Map.MapCellY || x >= (Map.MapCellX + Map.MapCellWidth) || y >= (Map.MapCellY + Map.MapCellHeight)) {
+			Assign_Target(TARGET_NONE);
+			Assign_Destination(TARGET_NONE);
+			ArchiveTarget = ::As_Target(Coord);
+		}
 	}
 
 	/*
@@ -1311,7 +1329,7 @@ void FootClass::Active_Click_With(ActionType action, CELL cell)
 		case ACTION_MOVE:
 			if (AllowVoice) {
 				COORDINATE coord = Map.Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y());
-				OutList.Add(EventClass(ANIM_MOVE_FLASH, PlayerPtr->Class->House, coord));
+				OutList.Add(EventClass(ANIM_MOVE_FLASH, PlayerPtr->Class->House, coord, 1 << PlayerPtr->Class->House));
 			}
 			// Fall into next case.
 
@@ -1741,7 +1759,19 @@ int FootClass::Mission_Enter(void)
 		**	Since there is no potential object to enter, then abort this
 		**	mission with some default standby mission.
 		*/
-		Enter_Idle_Mode();
+		if (MissionQueue == MISSION_NONE) {
+			/*
+			**	If this is a harvester, then return to harvesting.
+			**	Set a hacky target so we know to skip to the proper state.
+			*/
+			if (What_Am_I() == RTTI_UNIT && ((UnitClass*)this)->Class->IsToHarvest) {
+				Assign_Mission(MISSION_HARVEST);
+				Assign_Target(As_Target());
+				Assign_Destination(TARGET_NONE);
+			} else {
+				Enter_Idle_Mode();
+			}
+		}
 	}
 
 	return(MissionControl[Mission].Normal_Delay() + Random_Pick(0, 2));
@@ -2036,13 +2066,22 @@ void FootClass::Detach(TARGET target, bool all)
 	/*
 	**	Remove the target from the NavQueue list as well.
 	*/
+	int loop_count = 0;
 	for (int index = 0; index < ARRAY_SIZE(NavQueue); index++) {
 		if (NavQueue[index] == target) {
 			NavQueue[index] = TARGET_NONE;
 			if (index < ARRAY_SIZE(NavQueue)-1) {
 				memmove(&NavQueue[index], &NavQueue[index+1], ((ARRAY_SIZE(NavQueue)-index)-1) * sizeof(NavQueue[0]));
+				NavQueue[ARRAY_SIZE(NavQueue)-1] = TARGET_NONE;
 				index--;
 			}
+		}
+		/*
+		** Extra safety check
+		*/
+		loop_count++;
+		if (loop_count > ARRAY_SIZE(NavQueue)) {
+			break;
 		}
 	}
 

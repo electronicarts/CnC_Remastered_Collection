@@ -250,7 +250,7 @@ EventClass::EventClass(EventType type, TARGET src, TARGET dest)
  * HISTORY:                                                                                    *
  *   05/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-EventClass::EventClass(AnimType anim, HousesType owner, COORDINATE coord)
+EventClass::EventClass(AnimType anim, HousesType owner, COORDINATE coord, int visible)
 {
 	ID = Houses.ID(PlayerPtr);
 	Type = ANIMATION;
@@ -258,6 +258,7 @@ EventClass::EventClass(AnimType anim, HousesType owner, COORDINATE coord)
 	Data.Anim.What = anim;
 	Data.Anim.Owner = owner;
 	Data.Anim.Where = coord;
+	Data.Anim.Visible = visible;
 }
 
 
@@ -506,14 +507,26 @@ CCDebugString ("C&C95 - Sell packet received\n");
 		case ANIMATION:
 			anim = new AnimClass(Data.Anim.What, Data.Anim.Where);
 			if (anim) {
-				//2019/09/19 JAS - Visibility needs to be determined per player
-				if (Data.Anim.What != ANIM_MOVE_FLASH || Data.Anim.Owner == HOUSE_NONE || Special.IsVisibleTarget)
+				anim->Set_Owner(Data.Anim.Owner);
+
+				if (Special.IsVisibleTarget)
 				{
-					anim->Set_Visible_Flags(0xffff);
+					anim->Set_Visible_Flags(static_cast<unsigned int>(-1));
 				}
 				else
 				{
-					anim->Set_Visible_Flags(1 << Data.Anim.Owner);
+					anim->Set_Visible_Flags(static_cast<unsigned int>(Data.Anim.Visible));
+				}
+
+				/*
+				**	Beacons have a 30-second kill time.
+				*/
+				if (Data.Anim.What == ANIM_BEACON) {
+					FILETIME ft;
+					GetSystemTimeAsFileTime(&ft);
+
+					unsigned long long kill_time = ((unsigned long long)ft.dwLowDateTime + ((unsigned long long)ft.dwHighDateTime << 32ULL)) + 300000000ULL;
+					anim->Kill_At(kill_time);
 				}
 			}
 			break;
@@ -626,6 +639,12 @@ CCDebugString ("C&C95 - Primary building packet received\n");
 					techno->ArchiveTarget = Data.MegaMission.Target;
 					techno->Assign_Target(TARGET_NONE);
 					techno->Assign_Destination(Data.MegaMission.Target);
+				} else if (Data.MegaMission.Mission == MISSION_ENTER &&
+							object != NULL &&
+							object->What_Am_I() == RTTI_BUILDING &&
+							*((BuildingClass*)object) == STRUCT_REFINERY) {
+					techno->Transmit_Message(RADIO_HELLO, (BuildingClass*)object);
+					techno->Assign_Destination(TARGET_NONE);
 				} else {
 					techno->Assign_Target(Data.MegaMission.Target);
 					techno->Assign_Destination(Data.MegaMission.Destination);

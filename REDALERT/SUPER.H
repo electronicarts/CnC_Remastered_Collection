@@ -47,7 +47,7 @@ class SuperClass {
 		bool Enable(bool onetime = false, bool player=false, bool quiet=false);
 		void Forced_Charge(bool player=false);
 		bool AI(bool player=false);
-		bool Remove(void);
+		bool Remove(bool forced=false);
 		void Impatient_Click(void) const;
 		int Anim_Stage(void) const;
 		bool Discharged(bool player);

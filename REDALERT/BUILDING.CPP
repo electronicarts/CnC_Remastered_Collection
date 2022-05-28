@@ -173,7 +173,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 		case RADIO_CAN_LOAD:
 			TechnoClass::Receive_Message(from, message, param);
 			if (!House->Is_Ally(from)) return(RADIO_STATIC);
-			if (Mission == MISSION_CONSTRUCTION || Mission == MISSION_DECONSTRUCTION || BState == BSTATE_CONSTRUCTION || (!ScenarioInit && In_Radio_Contact() && Contact_With_Whom() != from)) return(RADIO_NEGATIVE);
+			if (Mission == MISSION_CONSTRUCTION || Mission == MISSION_DECONSTRUCTION || BState == BSTATE_CONSTRUCTION || (!ScenarioInit && Class->Type != STRUCT_REFINERY && In_Radio_Contact())) return(RADIO_NEGATIVE);
 			switch (Class->Type) {
 				case STRUCT_AIRSTRIP:
 					if (from->What_Am_I() == RTTI_AIRCRAFT && ((AircraftClass const *)from)->Class->IsFixedWing) {
@@ -200,7 +200,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 						*((UnitClass *)from) == UNIT_HARVESTER &&
 						(ScenarioInit || !Is_Something_Attached())) {
 
-						return(RADIO_ROGER);
+						return((Contact_With_Whom() != from) ? RADIO_ROGER : RADIO_NEGATIVE);
 					}
 					break;
 
@@ -358,6 +358,9 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 		*/
 		case RADIO_OVER_OUT:
 			Begin_Mode(BSTATE_IDLE);
+			if (*this == STRUCT_REPAIR) {
+				Assign_Mission(MISSION_GUARD);
+			}
 			TechnoClass::Receive_Message(from, message, param);
 			return(RADIO_ROGER);
 
@@ -1847,7 +1850,7 @@ void BuildingClass::Active_Click_With(ActionType action, CELL cell)
 		OutList.Add(EventClass(EventClass::SELL, TargetClass(this)));
 
 		COORDINATE coord = Map.Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y());
-		OutList.Add(EventClass(ANIM_MOVE_FLASH, PlayerPtr->Class->House, coord));
+		OutList.Add(EventClass(ANIM_MOVE_FLASH, PlayerPtr->Class->House, coord, 1 << PlayerPtr->Class->House));
 	}
 }
 
@@ -2569,13 +2572,21 @@ void BuildingClass::Grand_Opening(bool captured)
 				**	to place it in a nearby location.
 				*/
 				if (!unit->Unlimbo(Cell_Coord(cell), DIR_W)) {
-					cell = unit->Nearby_Location(this);
+					/*
+					**	Check multiple times for clear locations.
+					*/
+					for (int i = 0; i < 10; i++) {
+						cell = unit->Nearby_Location(this, i);
+						if (unit->Unlimbo(Cell_Coord(cell), DIR_SW)) {
+							break;
+						}
+					}
 
 					/*
 					**	If the harvester could still not be placed, then refund the money
 					**	to the owner and then bail.
 					*/
-					if (!unit->Unlimbo(Cell_Coord(cell), DIR_SW)) {
+					if (unit->IsInLimbo) {
 						House->Refund_Money(unit->Class->Cost_Of());
 						delete unit;
 					}
@@ -3141,7 +3152,7 @@ bool BuildingClass::Captured(HouseClass * newowner)
 	assert(Buildings.ID(this) == ID);
 	assert(IsActive);
 
-	if (Class->IsCaptureable && newowner != House) {
+	if (Can_Capture() && newowner != House) {
 #ifdef TOFIX
 		switch (Owner()) {
 			case HOUSE_GOOD:
@@ -3446,6 +3457,21 @@ bool BuildingClass::Can_Demolish_Unit(void) const
 }
 
 
+bool BuildingClass::Can_Capture(void) const
+{
+	bool can_capture = Class->IsCaptureable && Mission != MISSION_DECONSTRUCTION;
+
+	// Only allow capturing of multiplayer-owned structures
+	if (Session.Type != GAME_NORMAL) {
+		if (*this == STRUCT_V01) {		// Check to fix exploit in specific map 'Tournament Ore Rift'
+			can_capture = false;
+		}
+	}
+
+	return(can_capture);
+}
+
+
 /***********************************************************************************************
  * BuildingClass::Mission_Guard -- Handles guard mission for combat buildings.                 *
  *                                                                                             *
@@ -3723,9 +3749,16 @@ int BuildingClass::Mission_Deconstruction(void)
 					}
 				}
 
-				if (House->IsPlayerControl) {
+				// MBL 07.10.2020 - In 1v1, sometimes both players will hear this SFX, or neither player will hear it
+				// Making it so all players hear it positionally in the map; Per thread discussion in https://jaas.ea.com/browse/TDRA-7245
+				//
+				#if 0
+					if (House->IsPlayerControl) {
+						Sound_Effect(VOC_CASHTURN, Coord);
+					}
+				#else
 					Sound_Effect(VOC_CASHTURN, Coord);
-				}
+				#endif
 				
 				/*
 				**	Destroy all attached objects. ST - 4/24/2020 9:38PM
@@ -3741,6 +3774,7 @@ int BuildingClass::Mission_Deconstruction(void)
 				Status = DURING;
 				Begin_Mode(BSTATE_CONSTRUCTION);
 				IsReadyToCommence = false;
+				IsSurvivorless = true;
 				break;
 			}
 			Transmit_Message(RADIO_RUN_AWAY);
@@ -4811,8 +4845,8 @@ int BuildingClass::Mission_Unload(void)
 					**	Scatter everything around the weapon's factory door.
 					*/
 					for (FacingType f = FACING_FIRST; f < FACING_COUNT; f++) {
-						CellClass * cptr = &cellptr->Adjacent_Cell(f);
-						if (cptr->Cell_Building() == NULL) {
+						CellClass * cptr = cellptr->Adjacent_Cell(f);
+						if (cptr && cptr->Cell_Building() == NULL) {
 							cptr->Incoming(coord, true, true);
 						}
 					}

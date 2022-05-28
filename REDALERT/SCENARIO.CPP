@@ -319,6 +319,14 @@ Theme.Stop();
 		return(false);
 	}
 
+	/* Swap Lt. Blue and Blue color remaps in skirmish/multiplayer */
+	if (Session.Type != GAME_NORMAL) {
+		RemapControlType temp;
+		memcpy(&temp, &ColorRemaps[PCOLOR_LTBLUE], sizeof(RemapControlType));
+		memcpy(&ColorRemaps[PCOLOR_LTBLUE], &ColorRemaps[PCOLOR_BLUE], sizeof(RemapControlType));
+		memcpy(&ColorRemaps[PCOLOR_BLUE], &temp, sizeof(RemapControlType));
+	}
+
 	/*
 	**	Play the winning movie and then start the next scenario.
 	*/
@@ -2293,11 +2301,15 @@ bool Read_Scenario_INI(char * fname, bool )
 	Rule.Difficulty(ini);
 
 	/*
-	**	Fix a legacy bug with England and France country bonuses
+	**	- Fix a legacy bug with England and France country bonuses.
+	**	- Use ore growth and spread values from the special settings.
 	*/
 	if (Session.Type != GAME_NORMAL) {
 		HouseTypeClass::As_Reference(HOUSE_ENGLAND).ArmorBias = fixed(9, 10);
 		HouseTypeClass::As_Reference(HOUSE_FRANCE).ROFBias = fixed(9, 10);
+
+		Rule.IsTGrowth = Special.IsTGrowth;
+		Rule.IsTSpread = Special.IsTSpread;
 	}
 
 	/*
@@ -2411,7 +2423,10 @@ bool Read_Scenario_INI(char * fname, bool )
 	UnitClass::Read_INI(ini);
 	Call_Back();
 
-    	VesselClass::Read_INI(ini);
+	AircraftClass::Read_INI(ini);
+	Call_Back();
+
+	VesselClass::Read_INI(ini);
 	Call_Back();
 
 	/*
@@ -2470,7 +2485,11 @@ bool Read_Scenario_INI(char * fname, bool )
 	/*
 	**	Special cases:
 	**		Gold Rush multiplayer map cell 9033 - LAND_ROCK
+	**		The Lake District multiplayer map cell 8482 - LAND_ROCK
+	**		Blue Lakes multiplayer map cell 11937 - LAND_RIVER
 	**		USSR mission 13 - fixup trigger action
+	**		Allied mission 5B - fail mission if spy re-boards the transport at mission start
+	**		Allied mission 8A - Germany is allied with Greece and itself
 	**		Allied mission 9A - fail mission if tech center is destroyed before being spied
 	**		Aftermath: Brother in Arms - have transports move to separate waypoints
 	**		Aftermath: Let's Make a Steal - Make the pillboxes un-capturable
@@ -2480,9 +2499,54 @@ bool Read_Scenario_INI(char * fname, bool )
 		Map[(CELL)9033].Override_Land_Type(LAND_ROCK);
 	}
 
+	if (_stricmp(Scen.ScenarioName, "scm93ea.ini") == 0) {
+		Map[(CELL)8482].Override_Land_Type(LAND_ROCK);
+	}
+
+	if (_stricmp(Scen.ScenarioName, "scmh4ea.ini") == 0) {
+		Map[(CELL)11937].Override_Land_Type(LAND_RIVER);
+	}
+
 	if (_stricmp(Scen.ScenarioName, "scu13ea.ini") == 0) {
 		TriggerTypeClass* trigger = TriggerTypes.Ptr(11);
 		trigger->Action1.Trigger.Set_Raw(39);
+	}
+
+	if (_stricmp(Scen.ScenarioName, "scg05eb.ini") == 0) {
+		TeamTypeClass* spy1_team = TeamTypeClass::From_Name("spy1");
+		assert(spy1_team != NULL);
+		spy1_team->MissionList[spy1_team->MissionCount].Mission = TMISSION_SET_GLOBAL;
+		spy1_team->MissionList[spy1_team->MissionCount].Data.Value = 16;
+		spy1_team->MissionCount++;
+
+		TriggerTypeClass* los3_trigger = new TriggerTypeClass();
+		los3_trigger->IsPersistant = TriggerTypeClass::VOLATILE;
+		los3_trigger->House = HOUSE_GREECE;
+		los3_trigger->EventControl = MULTI_AND;
+		los3_trigger->ActionControl = MULTI_AND;
+		los3_trigger->Event1.Event = TEVENT_GLOBAL_SET;
+		los3_trigger->Event1.Data.Value = 16;
+		los3_trigger->Event2.Event = TEVENT_ALL_DESTROYED;
+		los3_trigger->Event2.Data.House = HOUSE_GREECE;
+		los3_trigger->Action1.Action = TACTION_LOSE;
+		los3_trigger->Action1.Data.Value = -255;
+		los3_trigger->Action2.Action = TACTION_NONE;
+		los3_trigger->Action2.Data.Value = -1;
+
+		TriggerTypeClass* frc1_trigger = TriggerTypeClass::From_Name("frc1");
+		assert(frc1_trigger != NULL);
+		frc1_trigger->Action1.Trigger = los3_trigger;
+	}
+
+	if (_stricmp(Scen.ScenarioName, "scg08ea.ini") == 0) {
+		for (int house = HOUSE_FIRST; house < HOUSE_COUNT; ++house) {
+			HouseClass* ptr = Houses.Ptr(house);
+			if (ptr != NULL && ptr->IsActive) {
+				if (ptr->Class->House == HOUSE_GREECE || ptr->Class->House == HOUSE_GERMANY) {
+					ptr->Make_Ally(HOUSE_GERMANY);
+				}
+			}
+		}
 	}
 
 	if (_stricmp(Scen.ScenarioName, "scg09ea.ini") == 0) {
@@ -3162,6 +3226,7 @@ static void Create_Units(bool official)
 			if (numtaken == 0) {
 				int pick = Random_Pick(0, num_waypts-1);
 				centroid = waypts[pick];
+				hptr->StartLocationOverride = pick;
 				taken[pick] = true;
 				numtaken++;
 			} else {
@@ -3211,6 +3276,7 @@ static void Create_Units(bool official)
 				**	Assign this best position to the house.
 				*/
 				centroid = waypts[best];
+				hptr->StartLocationOverride = best;
 				taken[best] = true;
 				numtaken++;
 			}

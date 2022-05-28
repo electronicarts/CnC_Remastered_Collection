@@ -100,6 +100,32 @@
 #include	"function.h"
 #include "COORDA.h"
 
+
+extern void Logic_Switch_Player_Context(ObjectClass *object);
+extern void Logic_Switch_Player_Context(HouseClass *object);
+extern void On_Special_Weapon_Targetting(const HouseClass* player_ptr, SpecialWeaponType weapon_type);
+extern bool Is_Legacy_Render_Enabled(void);
+
+
+static int _GapShroudXTable[]={
+		-1, 0, 1,
+	-2,-1, 0, 1, 2,
+	-2,-1, 0, 1, 2,
+	-2,-1, 0, 1, 2,
+	-2,-1, 0, 1, 2,
+	-2,-1, 0, 1, 2,
+		-1, 0, 1
+};
+static int _GapShroudYTable[]={
+		-3,-3,-3,
+	-2,-2,-2,-2,-2,
+	-1,-1,-1,-1,-1,
+	 0, 0, 0, 0, 0,
+	 1, 1, 1, 1, 1,
+	 2, 2, 2, 2, 2,
+		 3, 3, 3
+};
+
 /***********************************************************************************************
  * Recoil_Adjust -- Adjust pixel values in direction specified.                                *
  *                                                                                             *
@@ -290,7 +316,8 @@ UnitClass::UnitClass(UnitType classid, HousesType house) :
 	ShroudBits(0xFFFFFFFFUL),
 	ShroudCenter(0),
 	Reload(0),
-	SecondaryFacing(PrimaryFacing)
+	SecondaryFacing(PrimaryFacing),
+	TiberiumUnloadRefinery(TARGET_NONE)
 {
 	Reload = 0;
 	House->Tracking_Add(this);
@@ -432,6 +459,13 @@ void UnitClass::AI(void)
 	**	would occur by this process as well.
 	*/
 	Rotation_AI();
+
+	/*
+	**	Scatter units off buildings in guard modes.
+	*/
+	if (!IsTethered && !IsFiring && !IsDriving && !IsRotating && (Mission == MISSION_GUARD || Mission == MISSION_GUARD_AREA) && MissionQueue == MISSION_NONE && Map[Coord].Cell_Building() != NULL) {
+		Scatter(0, true, true);
+	}
 
 	/*
 	**	Delete this unit if it finds itself off the edge of the map and it is in
@@ -879,6 +913,22 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 			break;
 
 		/*
+		**	Something bad has happened to the object in contact with. Abort any coordinated
+		**	activity with this object. Basically, ... run away! Run away!
+		*/
+		case RADIO_RUN_AWAY:
+			if (Class->IsToHarvest && In_Radio_Contact() && Mission == MISSION_ENTER) {
+				TechnoClass * contact = Contact_With_Whom();
+				if (contact->What_Am_I() == RTTI_BUILDING && *((BuildingClass*)contact) == STRUCT_REFINERY) {
+					// Slight hack; set a target so the harvest mission knows to skip to finding home state
+					Assign_Mission(MISSION_HARVEST);
+					TarCom = As_Target();
+					return(RADIO_ROGER);
+				}
+			}
+			return(DriveClass::Receive_Message(from, message, param));
+
+		/*
 		**	When this message is received, it means that the other object
 		**	has already turned its radio off. Turn this radio off as well.
 		*/
@@ -1273,6 +1323,23 @@ void UnitClass::Active_Click_With(ActionType action, CELL cell)
 #else
 	DriveClass::Active_Click_With(action, cell);
 #endif
+}
+
+
+void UnitClass::Player_Assign_Mission(MissionType mission, TARGET target, TARGET destination)
+{
+	assert(Units.ID(this) == ID);
+	assert(IsActive);
+
+	if (mission == MISSION_HARVEST) {
+		ArchiveTarget = TARGET_NONE;
+	} else if (mission == MISSION_ENTER) {
+		BuildingClass* building = As_Building(destination);
+		if (building != NULL && *building == STRUCT_REFINERY && building->In_Radio_Contact()) {
+			building->Transmit_Message(RADIO_OVER_OUT);
+		}
+	}
+	DriveClass::Player_Assign_Mission(mission, target, destination);
 }
 
 
@@ -1692,7 +1759,7 @@ void UnitClass::Per_Cell_Process(PCPType why)
 			} else {
 				TechnoClass * contact = Contact_With_Whom();
 				if (Transmit_Message(RADIO_UNLOADED) == RADIO_RUN_AWAY) {
-					if (*this == UNIT_HARVESTER && contact && contact->What_Am_I() == RTTI_BUILDING) {
+					if (*this == UNIT_HARVESTER && contact && contact->What_Am_I() == RTTI_BUILDING && *((BuildingClass*)contact) != STRUCT_REPAIR) {
 						Assign_Mission(MISSION_HARVEST);
 					} else if (!Target_Legal(NavCom)) {
 						Scatter(0, true);
@@ -2144,7 +2211,10 @@ void UnitClass::Draw_It(int x, int y, WindowNumberType window) const
 	**	If this unit is carrying the flag, then draw that on top of everything else.
 	*/
 	if (Flagged != HOUSE_NONE) {
-		CC_Draw_Shape(this, "FLAGFLY", MFCD::Retrieve("FLAGFLY.SHP"), Frame % 14, x, y, window, SHAPE_CENTER|SHAPE_FADING|SHAPE_GHOST, HouseClass::As_Pointer(Flagged)->Remap_Table(false, Class->Remap), Map.UnitShadow, DIR_N, 0x0100, Flagged);
+		shapefile = MFCD::Retrieve("FLAGFLY.SHP");
+		int flag_x = x + (ICON_PIXEL_W / 2) - 2;
+		int flag_y = y + (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile);
+		CC_Draw_Shape(this, "FLAGFLY", shapefile, Frame % 14, flag_x, flag_y, window, SHAPE_CENTER|SHAPE_FADING|SHAPE_GHOST, HouseClass::As_Pointer(Flagged)->Remap_Table(false, Class->Remap), Map.UnitShadow, DIR_N, 0x0100, Flagged);
 	}
 
 	DriveClass::Draw_It(x, y, window);
@@ -2163,14 +2233,14 @@ void UnitClass::Draw_It(int x, int y, WindowNumberType window) const
  *                                                                                             *
  *          x,y      -- Relative offset from the center cell to perform the check upon.        *
  *                                                                                             *
- * OUTPUT:  bool; Is it located directly over a Tiberium patch?                                *
+ * OUTPUT:  int; Amount of Tiberium at this location.                                          *
  *                                                                                             *
  * WARNINGS:   none                                                                            *
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   07/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-bool UnitClass::Tiberium_Check(CELL & center, int x, int y)
+int UnitClass::Tiberium_Check(CELL & center, int x, int y)
 {
 	assert(Units.ID(this) == ID);
 	assert(IsActive);
@@ -2179,20 +2249,35 @@ bool UnitClass::Tiberium_Check(CELL & center, int x, int y)
 	**	If the specified offset from the origin will cause it
 	**	to spill past the map edge, then abort this cell check.
 	*/
-	if (Cell_X(center)+x < Map.MapCellX) return(false);
-	if (Cell_X(center)+x >= Map.MapCellX+Map.MapCellWidth) return(false);
-	if (Cell_Y(center)+y < Map.MapCellY) return(false);
-	if (Cell_Y(center)+y >= Map.MapCellY+Map.MapCellHeight) return(false);
+	if (Cell_X(center)+x < Map.MapCellX) return(0);
+	if (Cell_X(center)+x >= Map.MapCellX+Map.MapCellWidth) return(0);
+	if (Cell_Y(center)+y < Map.MapCellY) return(0);
+	if (Cell_Y(center)+y >= Map.MapCellY+Map.MapCellHeight) return(0);
 
 	center = XY_Cell(Cell_X(center)+x, Cell_Y(center)+y);
 
-	if ((Session.Type != GAME_NORMAL || (!IsOwnedByPlayer || Map[center].IsMapped))) {
-		if (Map[Coord].Zones[Class->MZone] != Map[center].Zones[Class->MZone]) return(false);
+	if ((Session.Type != GAME_NORMAL || (!IsOwnedByPlayer || Map[center].Is_Mapped(PlayerPtr)))) {
+		if (Map[Coord].Zones[Class->MZone] != Map[center].Zones[Class->MZone]) return(0);
 		if (!Map[center].Cell_Techno() && Map[center].Land_Type() == LAND_TIBERIUM) {
-			return(true);
+			int value = 0;
+			switch (Map[center].Overlay) {
+				case OVERLAY_GOLD1:
+				case OVERLAY_GOLD2:
+				case OVERLAY_GOLD3:
+				case OVERLAY_GOLD4:
+					value = Rule.GoldValue;
+					break;
+				case OVERLAY_GEMS1:
+				case OVERLAY_GEMS2:
+				case OVERLAY_GEMS3:
+				case OVERLAY_GEMS4:
+					value = Rule.GemValue*4;
+					break;
+			}
+			return((Map[center].OverlayData+1)*value);
 		}
 	}
-	return(false);
+	return(0);
 }
 
 
@@ -2228,30 +2313,60 @@ bool UnitClass::Goto_Tiberium(int rad)
 			**	Perform a ring search outward from the center.
 			*/
 			for (int radius = 1; radius < rad; radius++) {
+				CELL cell = center;
+				CELL bestcell = 0;
+				int tiberium = 0;
+				int besttiberium = 0;
 				for (int x = -radius; x <= radius; x++) {
-					CELL cell = center;
-					if (Tiberium_Check(cell, x, -radius)) {
-						Assign_Destination(::As_Target(cell));
-						return(false);
+
+					/*
+					**	Randomize the corners.
+					*/
+					int corner[2];
+					int corners[4][2] = {
+						{x, -radius},
+						{x, +radius},
+						{-radius, x},
+						{+radius, x}
+					};
+					for (int i = 0; i < 3; i++) {
+						int j = i + rand() / (RAND_MAX / (4 - i) + 1);
+						memcpy(&corner, &corners[j], sizeof(corner));
+						memcpy(&corners[j], &corners[i], sizeof(corner));
+						memcpy(&corners[i], corner, sizeof(corner));
 					}
 
 					cell = center;
-					if (Tiberium_Check(cell, x, +radius)) {
-						Assign_Destination(::As_Target(cell));
-						return(false);
+					tiberium = Tiberium_Check(cell, corners[0][0], corners[0][1]);
+					if (tiberium > besttiberium) {
+						bestcell = cell;
+						besttiberium = tiberium;
 					}
 
 					cell = center;
-					if (Tiberium_Check(cell, -radius, x)) {
-						Assign_Destination(::As_Target(cell));
-						return(false);
+					tiberium = Tiberium_Check(cell, corners[1][0], corners[1][1]);
+					if (tiberium > besttiberium) {
+						bestcell = cell;
+						besttiberium = tiberium;
 					}
 
 					cell = center;
-					if (Tiberium_Check(cell, +radius, x)) {
-						Assign_Destination(::As_Target(cell));
-						return(false);
+					tiberium = Tiberium_Check(cell, corners[2][0], corners[2][1]);
+					if (tiberium > besttiberium) {
+						bestcell = cell;
+						besttiberium = tiberium;
 					}
+
+					cell = center;
+					tiberium = Tiberium_Check(cell, corners[3][0], corners[3][1]);
+					if (tiberium > besttiberium) {
+						bestcell = cell;
+						besttiberium = tiberium;
+					}
+				}
+				if (bestcell) {
+					Assign_Destination(::As_Target(bestcell));
+					return(false);
 				}
 			}
 		}
@@ -2357,10 +2472,6 @@ bool UnitClass::Harvesting(void)
  * HISTORY:                                                                                    *
  *   07/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-extern void Logic_Switch_Player_Context(ObjectClass *object);
-extern void Logic_Switch_Player_Context(HouseClass *object);
-extern void On_Special_Weapon_Targetting(const HouseClass* player_ptr, SpecialWeaponType weapon_type);
-
 int UnitClass::Mission_Unload(void)
 {
 	assert(Units.ID(this) == ID);
@@ -2806,10 +2917,10 @@ int UnitClass::Mission_Harvest(void)
 		*/
 		case LOOKING:
 			/*
-			**	When full of tiberium, just skip to finding a free refinery
-			**	to unload at.
+			**	Slightly hacky; if TarCom is set then skip to finding home state.
 			*/
-			if (Tiberium_Load() == 1) {
+			if (Target_Legal(TarCom)) {
+				Assign_Target(TARGET_NONE);
 				Status = FINDHOME;
 				return(1);
 			}
@@ -2827,6 +2938,7 @@ int UnitClass::Mission_Harvest(void)
 				Set_Rate(2);
 				Set_Stage(0);
 				Status = HARVESTING;
+				ArchiveTarget = ::As_Target(Coord_Cell(Coord));
 				return(1);
 			} else {
 
@@ -2874,7 +2986,6 @@ int UnitClass::Mission_Harvest(void)
 				IsHarvesting = false;
 				if (Tiberium_Load() == 1) {
 					Status = FINDHOME;
-				  	ArchiveTarget = ::As_Target(Coord_Cell(Coord));
 				} else {
 					if (!Goto_Tiberium(Rule.TiberiumShortScan / CELL_LEPTON_W) && !Target_Legal(NavCom))	{
 					  	ArchiveTarget = TARGET_NONE;
@@ -2885,6 +2996,8 @@ int UnitClass::Mission_Harvest(void)
 					}
 				}
 				return(1);
+			} else if (!Target_Legal(NavCom) && ArchiveTarget == TARGET_NONE) {
+				ArchiveTarget = ::As_Target(Coord_Cell(Coord));
 			}
 			return(1);
 //			return(TICKS_PER_SECOND*Rule.OreDumpRate);
@@ -2896,9 +3009,9 @@ int UnitClass::Mission_Harvest(void)
 			if (!Target_Legal(NavCom)) {
 
 				/*
-				**	Find nearby refinery and head to it?
+				**	Find best refinery.
 				*/
-				BuildingClass * nearest = Find_Docking_Bay(STRUCT_REFINERY, false);
+				BuildingClass * nearest = Find_Best_Refinery();
 
 				/*
 				**	Since the refinery said it was ok to load, establish radio
@@ -2911,7 +3024,7 @@ int UnitClass::Mission_Harvest(void)
 					}
 				} else {
 					ScenarioInit++;
-					nearest = Find_Docking_Bay(STRUCT_REFINERY, false);
+					nearest = Find_Best_Refinery();
 					ScenarioInit--;
 					if (nearest != NULL) {
 						Assign_Destination(::As_Target(Nearby_Location(nearest)));
@@ -3224,7 +3337,7 @@ MoveType UnitClass::Can_Enter_Cell(CELL cell, FacingType ) const
 				**	Cloaked enemy objects are not considered if this is a Find_Path()
 				**	call.
 				*/
-				if (!obj->Is_Techno() || ((TechnoClass *)obj)->Cloak != CLOAKED) {
+				if (!obj->Is_Techno() || !((TechnoClass *)obj)->Is_Cloaked(this)) {
 
 					/*
 					**	If this unit can crush infantry, and there is an enemy infantry in the
@@ -3502,16 +3615,17 @@ ActionType UnitClass::What_Action(ObjectClass const * object) const
 	/*
 	**	Special return to friendly refinery action.
 	*/
-	if (House->IsPlayerControl && object->Is_Techno() && ((TechnoClass const *)object)->House->Is_Ally(this)) {
-		if (object->What_Am_I() == RTTI_BUILDING && ((UnitClass *)this)->Transmit_Message(RADIO_CAN_LOAD, (TechnoClass*)object) == RADIO_ROGER) {
-			action = ACTION_ENTER;
-		}
+	bool is_player_controlled = (Session.Type == GAME_NORMAL)
+		? (House->IsPlayerControl && object->Owner() != HOUSE_NONE && HouseClass::As_Pointer(object->Owner())->IsPlayerControl)
+		: (Is_Owned_By_Player() && House->Class->House == object->Owner());
+	if (is_player_controlled && object->What_Am_I() == RTTI_BUILDING && ((UnitClass *)this)->Transmit_Message(RADIO_CAN_LOAD, (TechnoClass*)object) == RADIO_ROGER) {
+		action = ACTION_ENTER;
 	}
 
 	/*
 	**	Special return to friendly repair factory action.
 	*/
-	if (House->IsPlayerControl && action == ACTION_SELECT && object->What_Am_I() == RTTI_BUILDING) {
+	if (is_player_controlled && action == ACTION_SELECT && object->What_Am_I() == RTTI_BUILDING) {
 		BuildingClass * building = (BuildingClass *)object;
 		if (building->Class->Type == STRUCT_REPAIR && ((UnitClass *)this)->Transmit_Message(RADIO_CAN_LOAD, building) == RADIO_ROGER && !building->In_Radio_Contact() && !building->Is_Something_Attached()) {
 			action = ACTION_MOVE;
@@ -3712,6 +3826,27 @@ int UnitClass::Mission_Move(void)
 	}
 
 	return(DriveClass::Mission_Move());
+}
+
+
+int UnitClass::Mission_Enter(void)
+{
+	assert(Units.ID(this) == ID);
+	assert(IsActive);
+
+	if (Class->IsToHarvest) {
+		TechnoClass * contact = Contact_With_Whom();
+		if (contact == NULL) {
+			contact = As_Techno(ArchiveTarget);
+		}
+		if (contact != NULL &&
+			contact->What_Am_I() == RTTI_BUILDING &&
+			*((BuildingClass*)contact) == STRUCT_REFINERY) {
+			TiberiumUnloadRefinery = contact->As_Target();
+		}
+	}
+
+	return(DriveClass::Mission_Enter());
 }
 
 
@@ -4306,6 +4441,32 @@ fixed UnitClass::Tiberium_Load(void) const
 }
 
 
+BuildingClass* UnitClass::Find_Best_Refinery(void) const
+{
+	/*
+	**	Remember our last refinery and prefer that one, if still available and valid.
+	*/
+	if (Target_Legal(TiberiumUnloadRefinery)) {
+		BuildingClass * refinery = As_Building(TiberiumUnloadRefinery);
+		if (refinery != NULL &&
+			refinery->House == House &&
+			!refinery->IsInLimbo &&
+			refinery->Mission != MISSION_DECONSTRUCTION &&
+			*refinery == STRUCT_REFINERY &&
+			Map[refinery->Center_Coord()].Zones[Techno_Type_Class()->MZone] == Map[Center_Coord()].Zones[Techno_Type_Class()->MZone]) {
+			return refinery;
+		} else {
+			TiberiumUnloadRefinery = TARGET_NONE;
+		}
+	}
+
+	/*
+	**	Find nearby refinery and head to it?
+	*/
+	return Find_Docking_Bay(STRUCT_REFINERY, false);
+}
+
+
 /***********************************************************************************************
  * UnitClass::Offload_Tiberium_Bail -- Offloads one Tiberium quantum from the object.          *
  *                                                                                             *
@@ -4460,7 +4621,7 @@ void UnitClass::Overrun_Square(CELL cell, bool threaten)
 						if (object->Height == 0) {
 							AnimClass* anim = new AnimClass(ANIM_CORPSE1, object->Center_Coord());
 							if (anim != NULL) {
-								anim->OwnerHouse = object->Owner();
+								anim->Set_Owner(object->Owner());
 							}
 						}
 						object->Record_The_Kill(this);
@@ -4965,64 +5126,143 @@ bool UnitClass::Limbo(void)
 	return(false);
 }
 
+
+
+/***********************************************************************************************
+ * UnitClass::Apply_Temporary_Jamming_Shroud -- Apply a temporary gap generator shroud effect  *
+ *                                                                                             *
+ *    This is intended as a temporary effect that is active only during export of the          *
+ *    shroud data                                                                              *
+ *                                                                                             *
+ * INPUT:   House to apply effect for                                                          *
+ *                                                                                             *
+ * OUTPUT:  Bitmask of cells that effect was applied to                                        *
+ *                                                                                             *
+ * WARNINGS:   none                                                                            *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   8/19/2020 12:13PM ST : Created.                                                           *
+ *=============================================================================================*/
+unsigned int UnitClass::Apply_Temporary_Jamming_Shroud(HouseClass *house_to_apply_for)
+{
+	unsigned int shroud_bits_applied = 0;
+
+	if (!IsActive || !Strength) {
+		return shroud_bits_applied;
+	}
+
+	if (!Class->IsGapper) {
+		return shroud_bits_applied;
+	}
+
+	CELL shroud_center = Coord_Cell(Center_Coord());
+	int centerx = Cell_X(shroud_center);
+	int centery = Cell_Y(shroud_center);
+	CELL trycell;
+
+	for (int index = 0; index < 31; index++) {
+		shroud_bits_applied <<= 1;
+		trycell = XY_Cell(centerx + _GapShroudXTable[index], centery + _GapShroudYTable[index]);
+		if (Map[trycell].Is_Mapped(house_to_apply_for)) {
+			Map.Jam_Cell(trycell, House);
+			shroud_bits_applied |= 1;
+		}
+	}
+
+	if (shroud_bits_applied) {
+		Map.Constrained_Look(Coord, 5 * CELL_LEPTON_W, house_to_apply_for);
+	}
+	
+	return shroud_bits_applied;
+}	
+	
+	
+			  
+/***********************************************************************************************
+ * UnitClass::Unapply_Temporary_Jamming_Shroud -- Remove temporary gap generator shroud effect *
+ *                                                                                             *
+ *    Remove gap effect added by Apply_Temporary_Jamming_Shroud                                *
+ *                                                                                             *
+ * INPUT:   House to unapply effect for                                                        *
+ *          Bitmask of cells that effect was applied to                                        *
+ *                                                                                             *
+ * OUTPUT:                                                                                     *
+ *                                                                                             *
+ * WARNINGS:   none                                                                            *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   8/19/2020 12:16PM ST : Created.                                                           *
+ *=============================================================================================*/
+void UnitClass::Unapply_Temporary_Jamming_Shroud(HouseClass *house_to_unapply_for, unsigned int shroud_bits_applied)
+{
+	if (!IsActive || !Strength) {
+		return;
+	}
+
+	if (!Class->IsGapper) {
+		return;
+	}
+
+	CELL shroud_center = Coord_Cell(Center_Coord());
+	int centerx = Cell_X(shroud_center);
+	int centery = Cell_Y(shroud_center);
+	CELL trycell;
+
+	for (int index = 30; index >= 0 && shroud_bits_applied; index--) {
+		if (shroud_bits_applied & 1) {
+			trycell = XY_Cell(centerx + _GapShroudXTable[index], centery + _GapShroudYTable[index]);
+			Map.UnJam_Cell(trycell, House);
+			Map.Map_Cell(trycell, house_to_unapply_for);
+		}
+		shroud_bits_applied >>= 1;
+	}
+}	
+
+
+
 /*
 ** Updated for client/server multiplayer - ST 8/12/2019 11:46AM
 */
 void UnitClass::Shroud_Regen(void)
 {
 	if (Class->IsGapper/*KO && !House->IsPlayerControl*/) {
-		static int _xtab[]={
-			   -1, 0, 1,
-			-2,-1, 0, 1, 2,
-			-2,-1, 0, 1, 2,
-			-2,-1, 0, 1, 2,
-			-2,-1, 0, 1, 2,
-			-2,-1, 0, 1, 2,
-			   -1, 0, 1
-		};
-		static int _ytab[]={
-			   -3,-3,-3,
-			-2,-2,-2,-2,-2,
-			-1,-1,-1,-1,-1,
-			 0, 0, 0, 0, 0,
-			 1, 1, 1, 1, 1,
-			 2, 2, 2, 2, 2,
-			    3, 3, 3
-		};
+		
 		int index;
 		int centerx, centery;
 		CELL trycell;
 
-		// Only restore under the shroud if it's a valid field.
-		if (ShroudBits != (unsigned)-1L) {
-			centerx = Cell_X(ShroudCenter);
-			centery = Cell_Y(ShroudCenter);
-			for (index = 30; index >= 0 && ShroudBits; index--) {
-				if (ShroudBits & 1) {
-					trycell = XY_Cell(centerx + _xtab[index], centery + _ytab[index]);
-#if(0)
-					Map.Map_Cell(trycell, PlayerPtr);
-#else
-				Map.UnJam_Cell(trycell, House);
-				Map.Map_Cell(trycell, House);
-#endif
+		if (Session.Type != GAME_GLYPHX_MULTIPLAYER || Is_Legacy_Render_Enabled()) {
+			// Only restore under the shroud if it's a valid field.
+			if (ShroudBits != (unsigned)-1L) {
+				centerx = Cell_X(ShroudCenter);
+				centery = Cell_Y(ShroudCenter);
+				for (index = 30; index >= 0 && ShroudBits; index--) {
+					if (ShroudBits & 1) {
+						trycell = XY_Cell(centerx + _GapShroudXTable[index], centery + _GapShroudYTable[index]);
+	#if(0)
+						Map.Map_Cell(trycell, PlayerPtr);
+	#else
+					Map.UnJam_Cell(trycell, House);
+					Map.Map_Cell(trycell, House);
+	#endif
+					}
+					ShroudBits >>= 1;
 				}
-				ShroudBits >>= 1;
 			}
-		}
 
-		if(IsActive && Strength) {
-			// Now shroud around the new center
-			ShroudBits = 0L;
-			ShroudCenter = Coord_Cell(Center_Coord());
-			centerx = Cell_X(ShroudCenter);
-			centery = Cell_Y(ShroudCenter);
-			for (index = 0; index < 31; index++) {
-				ShroudBits <<= 1;
-				trycell = XY_Cell(centerx + _xtab[index], centery + _ytab[index]);
-				if (Map[trycell].Is_Mapped(House)) {
-					Map.Jam_Cell(trycell, House);
-					ShroudBits |= 1;
+			if(IsActive && Strength) {
+				// Now shroud around the new center
+				ShroudBits = 0L;
+				ShroudCenter = Coord_Cell(Center_Coord());
+				centerx = Cell_X(ShroudCenter);
+				centery = Cell_Y(ShroudCenter);
+				for (index = 0; index < 31; index++) {
+					ShroudBits <<= 1;
+					trycell = XY_Cell(centerx + _GapShroudXTable[index], centery + _GapShroudYTable[index]);
+					if (Map[trycell].Is_Mapped(House)) {
+						Map.Jam_Cell(trycell, House);
+						ShroudBits |= 1;
+					}
 				}
 			}
 		}
@@ -5037,14 +5277,15 @@ void UnitClass::Shroud_Regen(void)
 		
 		} else {
 		
-			for (int i = 0; i < Session.Players.Count(); i++) {
-				HouseClass *player_house = HouseClass::As_Pointer(Session.Players[i]->Player.ID);
-				if (player_house->IsHuman && player_house != House) {
-					Map.Constrained_Look(Coord, 5 * CELL_LEPTON_W, player_house);
+			if (Is_Legacy_Render_Enabled()) {
+				for (int i = 0; i < Session.Players.Count(); i++) {
+					HouseClass *player_house = HouseClass::As_Pointer(Session.Players[i]->Player.ID);
+					if (player_house->IsHuman && player_house != House) {
+						Map.Constrained_Look(Coord, 5 * CELL_LEPTON_W, player_house);
+					}
 				}
 			}
 		}
-	
 	}
 }
 

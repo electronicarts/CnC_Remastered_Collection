@@ -213,7 +213,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 
 		case RADIO_CAN_LOAD:
 			TechnoClass::Receive_Message(from, message, param);
-			if (BState == BSTATE_CONSTRUCTION || (!ScenarioInit && In_Radio_Contact())) return(RADIO_NEGATIVE);
+			if (BState == BSTATE_CONSTRUCTION || (!ScenarioInit && Class->Type != STRUCT_REFINERY && In_Radio_Contact())) return(RADIO_NEGATIVE);
 			switch (Class->Type) {
 				case STRUCT_AIRSTRIP:
 					if (from->What_Am_I() == RTTI_AIRCRAFT && *((AircraftClass const *)from) == AIRCRAFT_CARGO) {
@@ -238,7 +238,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 						*((UnitClass *)from) == UNIT_HARVESTER &&
 						(ScenarioInit || !Is_Something_Attached())) {
 
-						return(RADIO_ROGER);
+						return((Contact_With_Whom() != from) ? RADIO_ROGER : RADIO_NEGATIVE);
 					}
 					break;
 
@@ -293,7 +293,32 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 				Begin_Mode(BSTATE_FULL);
 			}
 
-			if (Transmit_Message(RADIO_NEED_TO_MOVE, from) == RADIO_ROGER) {
+			/*
+			**	If this building is already in radio contact, then it might
+			**	be able to satisfy the request to load by bumping off any
+			**	preoccupying task.
+			*/
+			if (*this == STRUCT_REPAIR) {
+				if (Contact_With_Whom() != from) {
+					if (Transmit_Message(RADIO_ON_DEPOT) == RADIO_ROGER) {
+						if (Transmit_Message(RADIO_NEED_REPAIR) == RADIO_NEGATIVE) {
+							Transmit_Message(RADIO_RUN_AWAY);
+							Transmit_Message(RADIO_OVER_OUT);
+							return(RADIO_ROGER);
+						}
+					}
+				}
+			}
+
+			/*
+			**	Establish contact with the object if this building isn't already in contact
+			**	with another.
+			*/
+			if (!In_Radio_Contact()) {
+				Transmit_Message(RADIO_HELLO, from);
+			}
+
+			if (Transmit_Message(RADIO_NEED_TO_MOVE) == RADIO_ROGER) {
 				if (*this == STRUCT_HELIPAD) {
 					param = As_Target();
 				} else {
@@ -308,7 +333,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 				/*
 				**	Tell the harvester to move to the docking pad of the refinery.
 				*/
-				if (Transmit_Message(RADIO_MOVE_HERE, param, from) == RADIO_YEA_NOW_WHAT) {
+				if (Transmit_Message(RADIO_MOVE_HERE, param) == RADIO_YEA_NOW_WHAT) {
 
 					/*
 					**	Since the harvester is already there, tell it to begin the backup
@@ -1141,7 +1166,9 @@ void BuildingClass::AI(void)
 				Repair(1);
 			} else {
 				if (IsTickedOff && (int)Scenario > 2 && Random_Pick(0, 50) < (int)Scenario && !Trigger) {
-					Sell_Back(1);
+					if (GameToPlay != GAME_NORMAL || Scenario != 15 || PlayerPtr->ActLike != HOUSE_GOOD || *this != STRUCT_TEMPLE) {
+						Sell_Back(1);
+					}
 				}
 			}
 		}
@@ -1899,7 +1926,7 @@ void BuildingClass::Drop_Debris(TARGET source)
 	CELL	cell;
 
 	/*
-	**	Special case for Moebius to run from destroyed technology
+	**	Special case for Chan to run from destroyed technology
 	**	building.
 	*/
 	if (GameToPlay == GAME_NORMAL && *this ==  STRUCT_MISSION && PlayerPtr->ActLike == HOUSE_BAD && Scenario == 10) {
@@ -1907,7 +1934,7 @@ void BuildingClass::Drop_Debris(TARGET source)
 
 		ScenarioInit++;
 		if (i->Unlimbo(Center_Coord(), DIR_N)) {
-			i->Trigger = TriggerClass::As_Pointer("CHAN");
+			i->Trigger = TriggerClass::As_Pointer("win");
 			i->Strength = Random_Pick(5, (int)i->Class->MaxStrength);
 			ScenarioInit--;
 			i->Scatter(0, true);
@@ -1915,6 +1942,7 @@ void BuildingClass::Drop_Debris(TARGET source)
 			i->Assign_Mission(MISSION_GUARD_AREA);
 		} else {
 			delete i;
+			PlayerPtr->Flag_To_Win();
 		}
 		ScenarioInit--;
 	}
@@ -2049,7 +2077,7 @@ void BuildingClass::Active_Click_With(ActionType action, CELL cell)
 		OutList.Add(EventClass(EventClass::SELL, As_Target()));
 
 		COORDINATE coord = Map.Pixel_To_Coord(Get_Mouse_X(), Get_Mouse_Y());
-		OutList.Add(EventClass(ANIM_MOVE_FLASH, PlayerPtr->Class->House, coord));
+		OutList.Add(EventClass(ANIM_MOVE_FLASH, PlayerPtr->Class->House, coord, 1 << PlayerPtr->Class->House));
 	}
 }
 
@@ -2708,6 +2736,39 @@ bool BuildingClass::Limbo(void)
  * HISTORY:                                                                                    *
  *   12/24/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
+FireDataType BuildingClass::Fire_Data(int ) const
+{
+	Validate();
+	COORDINATE coord = Center_Coord();
+	int dist = 0;
+
+	/*
+	**	Make adjustments to the firing coordinate to account for turret
+	**	position. This depends on building type and turret facing.
+	*/
+	switch (Class->Type) {
+		default:
+		case STRUCT_GTOWER:
+		case STRUCT_ATOWER:
+			coord = Coord_Move(coord, DIR_N, 0x0030);
+			dist = 0x0040;
+			break;
+		case STRUCT_OBELISK:
+			coord = Coord_Move(coord, DIR_N, 0x00A8);
+			coord = Coord_Move(coord, DIR_W, 0x0018);
+			break;
+
+		case STRUCT_SAM:
+		case STRUCT_TURRET:
+			coord = Coord_Move(coord, DIR_N, 0x0030);
+			dist = 0x0080;
+			break;
+	}
+
+	return{coord,dist};
+}
+
+
 COORDINATE BuildingClass::Fire_Coord(int ) const
 {
 	Validate();
@@ -3493,8 +3554,14 @@ bool BuildingClass::Toggle_Primary(void)
 			}
 		}
 		IsLeader = true;
-		if (House == PlayerPtr) {
-			Speak(VOX_PRIMARY_SELECTED);
+		//
+		// MBL 07.22.2020 - Update so that each player in multiplayer will properly hear this when it applies to them
+		//
+		// if (House == PlayerPtr) {
+		// 	Speak(VOX_PRIMARY_SELECTED);
+		// }
+		if ((HouseClass *)House->IsHuman) {
+			Speak(VOX_PRIMARY_SELECTED, House);
 		}
 	}
 	Mark(MARK_CHANGE);
@@ -3523,7 +3590,7 @@ bool BuildingClass::Toggle_Primary(void)
 bool BuildingClass::Captured(HouseClass * newowner)
 {
 	Validate();
-	if (Class->IsCaptureable && newowner != House) {
+	if (Can_Capture() && newowner != House) {
 		switch (Owner()) {
 			case HOUSE_GOOD:
 				Speak(VOX_GDI_CAPTURED);
@@ -3803,6 +3870,21 @@ bool BuildingClass::Can_Demolish_Unit(void) const
 }
 
 
+bool BuildingClass::Can_Capture(void) const
+{
+	bool can_capture = Class->IsCaptureable && Mission != MISSION_DECONSTRUCTION;
+
+	// Override capturable state if this building has a capture win trigger
+	if (GameToPlay == GAME_NORMAL) {
+		if (!House->IsHuman && Trigger != NULL && Trigger->Action == TriggerClass::ACTION_WINLOSE) {
+			can_capture = true;
+		}
+	}
+
+	return(can_capture);
+}
+
+
 /***********************************************************************************************
  * BuildingClass::Mission_Guard -- Handles guard mission for combat buildings.                 *
  *                                                                                             *
@@ -4052,11 +4134,18 @@ int BuildingClass::Mission_Deconstruction(void)
 					}
 				}
 
-				//Changed for multiplayer ST - 3/13/2019 5:31PM
-				if (Is_Owned_By_Player()) {
-				//if (IsOwnedByPlayer) {
+				// MBL 07.10.2020 - In 1v1, sometimes both players will hear this SFX, or neither player will hear it
+				// Making it so all players hear it positionally in the map; Per thread discussion in https://jaas.ea.com/browse/TDRA-7245
+				//
+				#if 0
+					//Changed for multiplayer ST - 3/13/2019 5:31PM
+					if (Is_Owned_By_Player()) {
+					//if (IsOwnedByPlayer) {
+						Sound_Effect(VOC_CASHTURN, Coord);
+					}
+				#else
 					Sound_Effect(VOC_CASHTURN, Coord);
-				}
+				#endif
 				
 				/*
 				**	Destroy all attached objects. ST - 4/24/2020 9:38PM
@@ -4072,6 +4161,7 @@ int BuildingClass::Mission_Deconstruction(void)
 				Status = DURING;
 				Begin_Mode(BSTATE_CONSTRUCTION);
 				IsReadyToCommence = false;
+				IsSurvivorless = true;
 				break;
 			}
 			Transmit_Message(RADIO_RUN_AWAY);
@@ -4516,6 +4606,11 @@ int BuildingClass::Mission_Repair(void)
 
 				if (Transmit_Message(RADIO_NEED_TO_MOVE) == RADIO_ROGER) {
 					if (Contact_With_Whom()->Health_Ratio() < 0x0100 && Transmit_Message(RADIO_REPAIR) == RADIO_ROGER) {
+
+						// MBL 07.06.2020 - Patch 3: Change to TD Legacy: Adding "Repairing" VO for units on repair bay
+						// Per https://jaas.ea.com/browse/TDRA-7271
+						if (IsOwnedByPlayer && House) Speak(VOX_REPAIRING, House);
+
 						Status = DURING;
 						Begin_Mode(BSTATE_ACTIVE);
 						IsReadyToCommence = false;
@@ -5020,7 +5115,8 @@ int BuildingClass::Mission_Unload(void)
 					**	Scatter everything around the weapon's factory door.
 					*/
 					for (FacingType f = FACING_FIRST; f < FACING_COUNT; f++) {
-						CellClass * cptr = &cellptr->Adjacent_Cell(f);
+						CellClass * cptr = cellptr->Adjacent_Cell(f);
+						if (!cptr) continue;
 						UnitClass * cellunit = cptr->Cell_Unit();
 						if ((cellunit && cellunit != unit) || cptr->Cell_Infantry()) {
 							cptr->Incoming(coord, true, true);

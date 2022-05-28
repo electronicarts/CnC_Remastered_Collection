@@ -1621,23 +1621,28 @@ ResultType AircraftClass::Take_Damage(int & damage, int distance, WarheadType wa
 	*/
 	switch (res) {
 		case RESULT_DESTROYED:
-			Kill_Cargo(source);
-			Death_Announcement();
-			new AnimClass(ANIM_FBALL1, Target_Coord());
+			{
+				Kill_Cargo(source);
+				Death_Announcement();
+				COORDINATE coord = Target_Coord();
+				if (!(coord & HIGH_COORD_MASK)) {
+					new AnimClass(ANIM_FBALL1, coord);
+				}
 
-			/*
-			**	Parachute a survivor if possible.
-			*/
-			if (Class->IsCrew && Percent_Chance(90) && Map[Center_Coord()].Is_Clear_To_Move(SPEED_FOOT, true, false)) {
-				InfantryClass * infantry = new InfantryClass(INFANTRY_E1, House->Class->House);
-				if (infantry != NULL) {
-					if (!infantry->Paradrop(Center_Coord())) {
-						delete infantry;
+				/*
+				**	Parachute a survivor if possible.
+				*/
+				if (Class->IsCrew && Percent_Chance(90) && Map[Center_Coord()].Is_Clear_To_Move(SPEED_FOOT, true, false)) {
+					InfantryClass * infantry = new InfantryClass(INFANTRY_E1, House->Class->House);
+					if (infantry != NULL) {
+						if (!infantry->Paradrop(Center_Coord())) {
+							delete infantry;
+						}
 					}
 				}
-			}
 
-			delete this;
+				delete this;
+			}
 			break;
 
 		default:
@@ -1943,9 +1948,17 @@ void AircraftClass::Enter_Idle_Mode(bool )
 					/*
 					**	Normal aircraft try to find a good landing spot to rest.
 					*/
-					BuildingClass * building = Find_Docking_Bay(Class->Building, false);
+					BuildingClass * building = NULL;
+					if (In_Radio_Contact() && Contact_With_Whom()->What_Am_I() == RTTI_BUILDING) {
+						building = (BuildingClass *)Contact_With_Whom();
+					} else {
+						building = Find_Docking_Bay(Class->Building, false);
+						if (Transmit_Message(RADIO_HELLO, building) != RADIO_ROGER) {
+							building = NULL;
+						}
+					}
 					Assign_Destination(TARGET_NONE);
-					if (building != NULL && Transmit_Message(RADIO_HELLO, building) == RADIO_ROGER) {
+					if (building != NULL) {
 						if (Class->IsFixedWing) {
 							Status = 0;	//BG - reset the mission status to avoid landing on the ground next to the airstrip
 							if (IsLanding) {
@@ -2362,7 +2375,7 @@ ActionType AircraftClass::What_Action(CELL cell) const
 	ActionType action = FootClass::What_Action(cell);
 
 	//using function for IsVisible so we have different results for different players - JAS 2019/09/30
-	if (action == ACTION_MOVE && !Map[cell].Is_Visible(PlayerPtr)) {
+	if ((action == ACTION_MOVE || action == ACTION_ATTACK) && !Map[cell].Is_Visible(PlayerPtr)) {
 		action = ACTION_NOMOVE;
 	}
 
@@ -3063,7 +3076,7 @@ MoveType AircraftClass::Can_Enter_Cell(CELL cell, FacingType ) const
 	if (occupier == NULL ||
 		!occupier->Is_Techno() ||
 		((TechnoClass *)occupier)->House->Is_Ally(House) ||
-		(((TechnoClass *)occupier)->Cloak != CLOAKED &&
+		(!((TechnoClass *)occupier)->Is_Cloaked(this) &&
 			(ScenarioInit == 0 && (occupier->What_Am_I() != RTTI_BUILDING || !((BuildingClass*)occupier)->Class->IsInvisible)) )
 		) {
 
@@ -3123,9 +3136,10 @@ TARGET AircraftClass::Good_Fire_Location(TARGET target) const
 			for (int face = 0; face < 255; face += 16) {
 				COORDINATE newcoord = Coord_Move(tcoord, (DirType)face, r);
 				CELL newcell = Coord_Cell(newcoord);
+				CELL actualcell = Coord_Cell(Coord_Sub(newcoord, XY_Coord(0, FLIGHT_LEVEL)));
 
 				//using function for IsVisible so we have different results for different players - JAS 2019/09/30
-				if (Map.In_Radar(newcell) && (Session.Type != GAME_NORMAL || Map[newcell].Is_Visible(PlayerPtr)) && Cell_Seems_Ok(newcell, true)) {
+				if (Map.In_Radar(actualcell) && (Session.Type != GAME_NORMAL || Map[newcell].Is_Visible(PlayerPtr)) && Cell_Seems_Ok(newcell, true)) {
 					int dist;
 					if (altcoord != 0) {
 						dist = ::Distance(newcoord, altcoord);

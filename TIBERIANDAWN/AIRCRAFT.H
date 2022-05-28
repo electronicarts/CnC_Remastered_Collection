@@ -98,7 +98,7 @@ class AircraftClass : public FootClass, public FlyClass
 		**	Landing zone support functionality.
 		*/
 		bool  Is_LZ_Clear(TARGET target) const;
-		TARGET  New_LZ(TARGET oldlz) const;
+		TARGET  New_LZ(TARGET oldlz, bool stable = false) const;
 
 		/*
 		**	Coordinate inquiry functions. These are used for both display and
@@ -148,6 +148,7 @@ class AircraftClass : public FootClass, public FlyClass
 		virtual void Enter_Idle_Mode(bool initial = false);
 		virtual RadioMessageType Receive_Message(RadioClass * from, RadioMessageType message, long & param);
 		virtual void Scatter(COORDINATE threat, bool forced=false, bool nokidding=false);
+		void Set_Reinforcement_Delay(long delay);
 
 		/*
 		**	Scenario and debug support.
@@ -243,9 +244,14 @@ class AircraftClass : public FootClass, public FlyClass
 		char AttacksRemaining;
 
 		/*
+		**	Cargo planes will wait a certain number of ticks before flying in.
+		*/
+		long ReinforcementStart;
+
+		/*
 		** Some additional padding in case we need to add data to the class and maintain backwards compatibility for save/load
 		*/
-		unsigned char SaveLoadPadding[32];
+		unsigned char SaveLoadPadding[28];
 
 		/*
 		** This contains the value of the Virtual Function Table Pointer

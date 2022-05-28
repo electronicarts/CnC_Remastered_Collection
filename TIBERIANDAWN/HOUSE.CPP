@@ -569,16 +569,18 @@ bool HouseClass::Can_Build(TechnoTypeClass const * type, HousesType house) const
 	*/
 	long flags = ActiveBScan;
 
-#ifdef USE_RA_AI
-	// OldBScan Copied from RA for AI. ST - 7/25/2019 3:27PM
 	/*
-	**	The computer records prerequisite buildings because it can't relay on the
-	**	sidebar to keep track of this information.
+	**	AI players update flags using building quantity tracker.
+	**	Ensures consistent logic when determining building choices.
 	*/
 	if (!IsHuman) {
-		flags = OldBScan;
+		flags = 0;
+		for (int i = 0; i < 32; i++) {
+			if (BQuantity[i] > 0) {
+				flags |= (1 << i);
+			}
+		}
 	}
-#endif
 
 	int pre = type->Pre;
 	if (flags & STRUCTF_ADVANCED_POWER) flags |= STRUCTF_POWER;
@@ -972,6 +974,12 @@ void HouseClass::AI(void)
 	if (IsToDie && BorrowedTime.Expired()) {
 		IsToDie = false;
 		Blowup_All();
+
+		// MBL 07.15.2020 - Steve made this change for RA, so also applying here to TD
+		// See Change 737595 by Steve_Tall@STEVET3-VICTORY-H on 2020/07/10 13:40:02
+		if (GameToPlay == GAME_GLYPHX_MULTIPLAYER) {
+			MPlayer_Defeated();
+		}
 	}
 
 	/*
@@ -1221,6 +1229,7 @@ void HouseClass::AI(void)
 			unit->Mark(MARK_CHANGE);
 		} else {
 			CELL cell = As_Cell(FlagLocation);
+			Map[cell].Flag_Update();
 			Map[cell].Redraw_Objects();
 		}
 	}
@@ -1423,7 +1432,7 @@ void HouseClass::AI(void)
 	}
 #endif
 
-	if (GameToPlay != GAME_NORMAL) {
+	if (GameToPlay != GAME_NORMAL && Class->House != HOUSE_JP) {
 		Check_Pertinent_Structures();
 	}
 
@@ -1663,9 +1672,19 @@ void HouseClass::AI(void)
 void HouseClass::Attacked(BuildingClass* source)
 {
 	Validate();
+
 	if (SpeakAttackDelay.Expired() && PlayerPtr->Class->House == Class->House) {
-		Speak(VOX_BASE_UNDER_ATTACK, NULL, source ? source->Center_Coord() : 0);
-		SpeakAttackDelay.Set(Options.Normalize_Delay(SPEAK_DELAY));
+
+		if (GameToPlay == GAME_NORMAL) {
+			Speak(VOX_BASE_UNDER_ATTACK, NULL, source ? source->Center_Coord() : 0);
+		} else {
+			Speak(VOX_BASE_UNDER_ATTACK, this);
+		}
+
+		// MBL 06.13.2020 - Timing change from 2 minute cooldown, per https://jaas.ea.com/browse/TDRA-6784
+		// SpeakAttackDelay.Set(Options.Normalize_Delay(SPEAK_DELAY)); // 2 minutes
+		// SpeakAttackDelay.Set(Options.Normalize_Delay(TICKS_PER_MINUTE/2)); // 30 seconds as requested
+		SpeakAttackDelay.Set(Options.Normalize_Delay( (TICKS_PER_MINUTE/2)+(TICKS_PER_SECOND*5) )); // Tweaked for accuracy
 
 		/*
 		**	If there is a trigger event associated with being attacked, process it
@@ -2547,7 +2566,15 @@ ProdFailType HouseClass::Abandon_Production(RTTIType type)
 	if (GameToPlay == GAME_GLYPHX_MULTIPLAYER) {
 		if (IsHuman) {
 			Sidebar_Glyphx_Abandon_Production(type, *factory, this);
-			// Need to clear pending object here?
+			
+			// Need to clear pending object here if legacy renderer enabled
+
+			if (type == RTTI_BUILDINGTYPE || type == RTTI_BUILDING && Map.PendingObjectPtr) {
+				Map.PendingObjectPtr = 0;
+				Map.PendingObject = 0;
+				Map.PendingHouse = HOUSE_NONE;
+				Map.Set_Cursor_Shape(0);
+			}
 		}
 	} else {
 
@@ -2655,7 +2682,7 @@ bool HouseClass::Place_Special_Blast(SpecialWeaponType id, CELL cell)
 		case SPC_ION_CANNON:
 			if (IonCannon.Is_Ready()) {
 				anim = new AnimClass(ANIM_ION_CANNON, Cell_Coord(cell));
-				if (anim) anim->Owner = Class->House;
+				if (anim) anim->Set_Owner(Class->House);
 				if (this == PlayerPtr) {
 					Map.IsTargettingMode = false;
 				}
@@ -4046,6 +4073,13 @@ void HouseClass::MPlayer_Defeated(void)
 		}
 	}
 
+	/*
+	**	Remove any one-time superweapons the player might have.
+	*/
+	IonCannon.Remove(true);
+	AirStrike.Remove(true);
+	NukeStrike.Remove(true);
+
 	/*------------------------------------------------------------------------
 	If this is me:
 	- Set MPlayerObiWan, so I can only send messages to all players, and
@@ -4055,7 +4089,6 @@ void HouseClass::MPlayer_Defeated(void)
 	------------------------------------------------------------------------*/
 	if (PlayerPtr == this) {
 		MPlayerObiWan = 1;
-		Debug_Unshroud = true;
 		HiddenPage.Clear();
 		Map.Flag_To_Redraw(true);
 
@@ -4313,11 +4346,6 @@ void HouseClass::MPlayer_Defeated(void)
 			MPlayerCount = 0;
 		}
 	}
-
-	/*------------------------------------------------------------------------
-	Be sure our messages get displayed, even if we're about to exit.
-	------------------------------------------------------------------------*/
-	Map.Render();
 }
 
 
@@ -4738,10 +4766,14 @@ void HouseClass::Sell_Wall(CELL cell)
 					Map[cell].OverlayData = 0;
 					Map[cell].Owner = HOUSE_NONE;
 					Map[cell].Wall_Update();
-					Map[cell].Adjacent_Cell(FACING_N).Wall_Update();
-					Map[cell].Adjacent_Cell(FACING_W).Wall_Update();
-					Map[cell].Adjacent_Cell(FACING_S).Wall_Update();
-					Map[cell].Adjacent_Cell(FACING_E).Wall_Update();
+					CellClass * ncell = Map[cell].Adjacent_Cell(FACING_N);
+					if (ncell) ncell->Wall_Update();
+					CellClass * wcell = Map[cell].Adjacent_Cell(FACING_W);
+					if (wcell) wcell->Wall_Update();
+					CellClass * scell = Map[cell].Adjacent_Cell(FACING_S);
+					if (scell) scell->Wall_Update();
+					CellClass * ecell = Map[cell].Adjacent_Cell(FACING_E);
+					if (ecell) ecell->Wall_Update();
 					Map[cell].Recalc_Attributes();
 					Map[cell].Redraw_Objects();
 					ObjectClass::Detach_This_From_All(::As_Target(cell), true);
@@ -4778,6 +4810,13 @@ void HouseClass::Check_Pertinent_Structures(void)
 	}
 		  
 	if (IsToDie || IsToWin || IsToLose) {
+		return;
+	}
+
+	// MBL 07.15.2020 - Prevention of recent issue with constant "player defeated logic" and message to client spamming
+	// Per https://jaas.ea.com/browse/TDRA-7433
+	//
+	if (IsDefeated) {
 		return;
 	}
 

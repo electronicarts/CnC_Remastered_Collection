@@ -286,6 +286,9 @@ bool Read_Scenario_INI_Write_INB( char *root, bool fresh)
 	UnitClass::Read_INI(buffer);
 	Call_Back();
 
+	AircraftClass::Read_INI(buffer);
+	Call_Back();
+
 	VesselClass::Read_INI(buffer);
 	Call_Back();
 

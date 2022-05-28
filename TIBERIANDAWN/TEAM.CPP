@@ -1266,7 +1266,14 @@ void TeamClass::Coordinate_Move(void)
 								unit->Assign_Mission(MISSION_MOVE);
 							}
 							if (unit->NavCom != Target) {
-								unit->Assign_Destination(Target);
+								TARGET target = Target;
+								if (unit->What_Am_I() == RTTI_AIRCRAFT) {
+									AircraftClass* aircraft = (AircraftClass *)unit;
+									if (!aircraft->Class->IsFixedWing && !aircraft->Is_LZ_Clear(target)) {
+										target = aircraft->New_LZ(target, true);
+									}
+								}
+								unit->Assign_Destination(target);
 							}
 							finished = false;
 						} else {

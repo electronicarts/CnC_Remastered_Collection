@@ -547,7 +547,7 @@ void const *Get_Radar_Icon(void const * shapefile, int shapenum, int frames, int
 void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata = 0, void const * ghostdata = 0, DirType rotation = DIR_N);
 
 // Added for draw intercept. ST - 1/17/2019 12:31PM
-void CC_Draw_Shape(const ObjectClass *object, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata = 0, void const * ghostdata = 0, DirType rotation = DIR_N, long virtualscale = 0x0100);
+void CC_Draw_Shape(const ObjectClass *object, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata = 0, void const * ghostdata = 0, DirType rotation = DIR_N, long virtualscale = 0x0100, int width = 0, int height = 0);
 void CC_Draw_Shape(const ObjectClass *object, const char *shape_file_name, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata = 0, void const * ghostdata = 0, DirType rotation = DIR_N, long virtualscale = 0x0100, char override_owner = HOUSE_NONE);
 
 // Added for pip draw intercept - SKY

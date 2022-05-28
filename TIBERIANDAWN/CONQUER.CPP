@@ -2730,11 +2730,11 @@ extern void DLL_Draw_Intercept(int shape_number, int x, int y, int width, int he
 extern void DLL_Draw_Pip_Intercept(const ObjectClass* object, int pip);
 extern void DLL_Draw_Line_Intercept(int x, int y, int x1, int y1, unsigned char color, int frame);
 
-void CC_Draw_Shape(ObjectClass *object, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, int scale)
+void CC_Draw_Shape(ObjectClass *object, void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, int scale, int width, int height)
 {
 	if (window == WINDOW_VIRTUAL) {
-		int width = Get_Build_Frame_Width(shapefile);
-		int height = Get_Build_Frame_Height(shapefile);
+		if (width == 0) width = Get_Build_Frame_Width(shapefile);
+		if (height == 0) height = Get_Build_Frame_Height(shapefile);
 		DLL_Draw_Intercept(shapenum, x, y, width, height, (int)flags, object, NULL, -1, scale);
 		return;
 	}
@@ -3140,15 +3140,13 @@ void Handle_Team(int team, int action)
 			**	If a non team member is currently selected, then deselect all objects
 			**	before selecting this team.
 			*/
-			if (CurrentObject.Count()) {
-				switch (CurrentObject[0]->What_Am_I()) {
-					case RTTI_UNIT:
-					case RTTI_INFANTRY:
-					case RTTI_AIRCRAFT:
-						if (((FootClass *)CurrentObject[0])->Group != team) {
-							Unselect_All();
-						}
+			for (index = 0; index < CurrentObject.Count(); index++) {
+				ObjectClass * obj = CurrentObject[index];
+				if (obj->What_Am_I() == RTTI_UNIT || obj->What_Am_I() == RTTI_INFANTRY || obj->What_Am_I() == RTTI_AIRCRAFT) {
+					if (((FootClass *)obj)->Group != team) {
+						Unselect_All();
 						break;
+					}
 				}
 			}
 			for (index = 0; index < Units.Count(); index++) {

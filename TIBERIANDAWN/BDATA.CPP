@@ -234,7 +234,7 @@ static BuildingTypeClass const ClassEye(
 		false,		// Always use the given name for the building?
 		false,		// Is this a wall type structure?
 		false,		// Is it a factory type building?
-		true,			// Can this building be captured?
+		false,			// Can this building be captured?
 		false,		// Does it catch fire?
 		false,		// Simple (one frame) damage imagery?
 		false,		// Is it invisible to radar?

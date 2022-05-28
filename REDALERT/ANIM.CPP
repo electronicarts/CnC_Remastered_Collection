@@ -260,6 +260,32 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window) const
 			void const * transtable = NULL;
 			int shapenum = Class->Start + Fetch_Stage();
 			void const * remap = NULL;
+			ShapeFlags_Type flags = SHAPE_CENTER|SHAPE_WIN_REL;
+			bool alt = false;
+			int width = 0;
+			int height = 0;
+
+			/*
+			**	Some animations require special fixups.
+			*/
+			switch (Class->Type) {
+				case ANIM_ATOM_BLAST:
+					transtable = Map.UnitShadow;
+					break;
+
+				case ANIM_FLAG:
+					x += (ICON_PIXEL_W / 2) - 2;
+					y += (3 * ICON_PIXEL_H / 4) - Get_Build_Frame_Height(shapefile);
+					transtable = Map.UnitShadow;
+					alt = true;
+					break;
+
+				case ANIM_BEACON_VIRTUAL:
+					width = 29;
+					height = 39;
+					flags = flags | SHAPE_BOTTOM | SHAPE_COMPACT;
+					break;
+			}
 
 			/*
 			**	If the translucent table hasn't been determined yet, then check to see if it
@@ -267,13 +293,19 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window) const
 			*/
 			if (transtable == NULL && Class->IsWhiteTrans) transtable = DisplayClass::WhiteTranslucentTable;
 			if (transtable == NULL && Class->IsTranslucent) transtable = DisplayClass::TranslucentTable;
-			if (Class->Type == ANIM_ATOM_BLAST) transtable = Map.UnitShadow;
 
 			/*
 			**	Set the shape flags to properly take into account any fading or ghosting
 			**	table necessary.
 			*/
-			ShapeFlags_Type flags = SHAPE_CENTER|SHAPE_WIN_REL;
+			if (alt) {
+				flags = flags | SHAPE_FADING;
+				if (OwnerHouse != HOUSE_NONE) {
+					remap = HouseClass::As_Pointer(OwnerHouse)->Remap_Table(false);
+				} else {
+					remap = ColorRemaps[PCOLOR_GOLD].RemapTable;
+				}
+			}
 			if (transtable != NULL) flags = flags | SHAPE_GHOST;
 
 			/*
@@ -281,7 +313,7 @@ void AnimClass::Draw_It(int x, int y, WindowNumberType window) const
 			*/
 			if ((window == WINDOW_VIRTUAL) || (Fetch_Stage() < Class->Stages)) {
 				// Add 'this' parameter to call new shape draw intercept. ST - 5/22/2019
-				CC_Draw_Shape(this, shapefile, shapenum, x, y, window, flags, remap, transtable, DIR_N, Class->VirtualScale);
+				CC_Draw_Shape(this, shapefile, shapenum, x, y, window, flags, remap, transtable, DIR_N, Class->VirtualScale, width, height);
 			}
 		}
 		IsTheaterShape = false;
@@ -357,6 +389,7 @@ short const * AnimClass::Overlap_List(void) const
 		( MAP_CELL_W * 2) - 1, ( MAP_CELL_W * 2), ( MAP_CELL_W * 2) + 1,
  		REFRESH_EOL
 	};
+	static short const OverlapFlag[] = { 0, 1, -MAP_CELL_W, -(MAP_CELL_W-1), MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL };
 
 	if (IsToDelete) {
 		static short const _list[] = {REFRESH_EOL};
@@ -365,6 +398,10 @@ short const * AnimClass::Overlap_List(void) const
 
 	if (Class->Type == ANIM_ATOM_BLAST) {
 		return(OverlapAtom);
+	}
+
+	if (Class->Type == ANIM_FLAG) {
+		return(OverlapFlag);
 	}
 
 #ifdef PARTIAL
@@ -512,7 +549,7 @@ void AnimClass::operator delete(void * ptr)
  *   05/31/1994 JLB : Created.                                                                 *
  *   08/03/1994 JLB : Added a delayed affect parameter.                                        *
  *=============================================================================================*/
-AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay, unsigned char loop) :
+AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay, char loop) :
 	ObjectClass(RTTI_ANIM, Anims.ID(this)),
 	Class(AnimTypes.Ptr((int)animnum)),
 	xObject(TARGET_NONE),
@@ -524,7 +561,8 @@ AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay
 	IsInvisible(false),
 	Delay(timedelay),
 	Accum(0),
-	AttachLayer(LAYER_NONE)
+	AttachLayer(LAYER_NONE),
+	KillTime(0ULL)
 {
 #ifdef VIC
 	if (Class->Stages == -1) {
@@ -549,7 +587,7 @@ IsTheaterShape = false;
 
 	AnimClass::Unlimbo(coord);
 
-	VisibleFlags = 0xffff;
+	VisibleFlags = static_cast<unsigned int>(-1);
 
 	/*
 	**	Drop zone smoke always reveals the map around itself.
@@ -559,8 +597,12 @@ IsTheaterShape = false;
 		Map.Sight_From(Coord_Cell(coord), Rule.DropZoneRadius / CELL_LEPTON_W, PlayerPtr, false);
 	}
 
-	Loops = (unsigned char)(max(loop, 1) * Class->Loops);
-	Loops = (unsigned char)max(Loops, 1);
+	if (Class->Loops >= 0) {
+		Loops = (char)(max(loop, 1) * Class->Loops);
+		Loops = (char)max(Loops, 1);
+	} else {
+		Loops = Class->Loops;
+	}
 
 	/*
 	**	If the animation starts immediately, then play the associated sound effect now.
@@ -573,7 +615,7 @@ IsTheaterShape = false;
 	**	Check for a virtual animation
 	*/
 	if (Class->VirtualAnim != ANIM_NONE) {
-		AnimClass* virtual_anim = new AnimClass(Class->VirtualAnim, 0, timedelay, loop);
+		AnimClass* virtual_anim = new AnimClass(Class->VirtualAnim, Coord, timedelay, loop);
 		if (virtual_anim != NULL) {
 			virtual_anim->Make_Invisible();
 			VirtualAnimTarget = virtual_anim->As_Target();
@@ -709,6 +751,19 @@ void AnimClass::AI(void)
 	}
 
 	/*
+	**	Check the kill time.
+	*/
+	if (KillTime > 0ULL) {
+		FILETIME ft;
+		GetSystemTimeAsFileTime(&ft);
+
+		unsigned long long now = (unsigned long long)ft.dwLowDateTime + ((unsigned long long)ft.dwHighDateTime << 32ULL);
+		if (now >= KillTime) {
+			IsToDelete = true;
+		}
+	}
+
+	/*
 	**	Delete this animation and bail early if the animation is flagged to be deleted
 	**	immediately.
 	*/
@@ -784,10 +839,10 @@ void AnimClass::AI(void)
 					int damage = Accum;
 					Accum -= damage;
 					if (As_Object(xObject)->Take_Damage(damage, 0, WARHEAD_FIRE) == RESULT_DESTROYED) {
-						delete this;
 						if (Target_Legal(VirtualAnimTarget)) {
 							delete As_Animation(VirtualAnimTarget);
 						}
+						delete this;
 						return;
 					}
 				}
@@ -812,8 +867,8 @@ void AnimClass::AI(void)
 				**	Determine if this animation should loop another time. If so, then start the loop
 				**	but if not, then proceed into the animation termination handler.
 				*/
-				if (Loops) Loops--;
-				if (Loops) {
+				if (Loops > 0) Loops--;
+				if (Loops != 0) {
 					Set_Stage(Class->LoopStart);
 				} else {
 
@@ -1144,8 +1199,12 @@ void AnimClass::Detach(TARGET target, bool all)
 	assert(IsActive);
 
 	if (all) {
-		if (VirtualAnimTarget && VirtualAnimTarget == target) {
+		if (Target_Legal(VirtualAnimTarget) && VirtualAnimTarget == target) {
 			VirtualAnimTarget = TARGET_NONE;
+			if (IsInvisible) {
+				IsToDelete = true;
+				Mark(MARK_UP);
+			}
 		}
 		if (xObject == target) {
 			Map.Remove(this, In_Which_Layer());
@@ -1218,4 +1277,20 @@ void AnimClass::Do_Atom_Damage(HousesType ownerhouse, CELL cell)
 		//GamePalette.Set(FADE_PALETTE_SLOW, Call_Back);	//TO_FIX. ST 5/8/2019
 	}
 #endif
+}
+
+void AnimClass::Set_Owner(HousesType owner)
+{
+	OwnerHouse = owner;
+	if (Target_Legal(VirtualAnimTarget)) {
+		As_Animation(VirtualAnimTarget)->Set_Owner(owner);
+	}
+}
+
+void AnimClass::Set_Visible_Flags(unsigned flags)
+{
+	VisibleFlags = flags;
+	if (Target_Legal(VirtualAnimTarget)) {
+		As_Animation(VirtualAnimTarget)->Set_Visible_Flags(flags);
+	}
 }

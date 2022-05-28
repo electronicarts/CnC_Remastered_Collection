@@ -489,6 +489,12 @@ bool ObjectClass::Can_Demolish_Unit(void) const
 }
 
 
+bool ObjectClass::Can_Capture(void) const
+{
+	return(false);
+}
+
+
 /***********************************************************************************************
  * ObjectClass::Can_Player_Fire -- Can the player give this object an attack mission?          *
  *                                                                                             *
@@ -558,6 +564,7 @@ COORDINATE ObjectClass::Center_Coord(void) const {return Coord;};
 COORDINATE ObjectClass::Render_Coord(void) const {return(Center_Coord());}
 COORDINATE ObjectClass::Docking_Coord(void) const {return(Center_Coord());}
 COORDINATE ObjectClass::Sort_Y(void) const {return Coord;};
+FireDataType ObjectClass::Fire_Data(int which) const {return{Fire_Coord(which),0};}
 COORDINATE ObjectClass::Fire_Coord(int ) const {return Coord;};
 void ObjectClass::Record_The_Kill(TechnoClass * ) {};
 void ObjectClass::Do_Shimmer(void) {};

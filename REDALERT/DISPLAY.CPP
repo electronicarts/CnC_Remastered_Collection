@@ -996,7 +996,7 @@ void DisplayClass::Cursor_Mark(CELL pos, bool on)
 	CELL const * ptr;
 	CellClass * cellptr;
 
-	if (pos == -1) return;
+	if ((unsigned)pos >= MAP_CELL_TOTAL) return;
 
 	/*
 	**	For every cell in the CursorSize list, invoke its Redraw_Objects and
@@ -2916,6 +2916,7 @@ void DisplayClass::Select_These(COORDINATE coord1, COORDINATE coord2, bool addit
 		HouseClass * hptr = HouseClass::As_Pointer(obj->Owner());
 		if (	obj->Class_Of().IsSelectable &&
 				obj->What_Am_I() != RTTI_BUILDING &&
+				(!obj->Is_Techno() || !((TechnoClass*)obj)->Is_Cloaked(PlayerPtr)) &&
 				x >= x1 && x <= x2 && y >= y1 && y <= y2) {
 			bool old_allow_voice = AllowVoice;
 			bool is_player_controlled = (hptr != NULL) && hptr->IsPlayerControl;
@@ -2942,6 +2943,7 @@ void DisplayClass::Select_These(COORDINATE coord1, COORDINATE coord2, bool addit
 		**	Only try to select objects that are allowed to be selected, and are within the bounding box.
 		*/
 		if (	aircraft->Class->IsSelectable &&
+				!aircraft->Is_Cloaked(PlayerPtr) &&
 				!aircraft->Is_Selected_By_Player() &&
 				x >= x1 && x <= x2 && y >= y1 && y <= y2) {
 			bool old_allow_voice = AllowVoice;
@@ -3146,9 +3148,9 @@ int DisplayClass::TacticalClass::Action(unsigned flags, KeyNumType & key)
 			object = Map.Close_Object(coord);
 
 			/*
-			**	Special case check to ignore cloaked object if not owned by the player.
+			**	Special case check to ignore cloaked object if not allied with the player.
 			*/
-			if (object != NULL && object->Is_Techno() && !((TechnoClass *)object)->IsOwnedByPlayer && (((TechnoClass *)object)->Cloak == CLOAKED || ((TechnoClass *)object)->Techno_Type_Class()->IsInvisible)) {
+			if (object != NULL && object->Is_Techno() && ((TechnoClass *)object)->Is_Cloaked(PlayerPtr, true)) {
 				object = NULL;
 			}
 		}
@@ -4024,7 +4026,7 @@ void DisplayClass::Mouse_Left_Release(CELL cell, int x, int y, ObjectClass * obj
 							/*
 							**	Only consider objects that are owned by the player.
 							*/
-							if (!foot->IsOwnedByPlayer) continue;
+							if (!foot->Is_Owned_By_Player()) continue;
 
 							/*
 							**	If another member of this team has been discovered and

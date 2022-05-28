@@ -299,7 +299,7 @@ MoveType VesselClass::Can_Enter_Cell(CELL cell, FacingType ) const
 		}
 
 		TechnoClass * techno = cellptr->Cell_Techno();
-		if (techno != NULL && techno->Cloak == CLOAKED && !House->Is_Ally(techno)) {
+		if (techno != NULL && techno->Is_Cloaked(this)) {
 			return(MOVE_CLOAK);
 		}
 
@@ -1183,6 +1183,32 @@ Mono_Set_Cursor(0,0);
  * HISTORY:                                                                                    *
  *   05/13/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
+FireDataType VesselClass::Fire_Data(int which) const
+{
+	assert(Vessels.ID(this) == ID);
+	assert(IsActive);
+
+	COORDINATE coord = Center_Coord();
+
+	if (*this == VESSEL_CA) {
+		if (IsSecondShot) {
+			coord = Coord_Move(coord, PrimaryFacing + DIR_S, 0x0100);
+		} else {
+			coord = Coord_Move(coord, PrimaryFacing, 0x0100);
+		}
+		coord = Coord_Move(coord, DIR_N, 0x0030);
+		return{coord,0x0040};
+	}
+
+	if (*this == VESSEL_PT) {
+		coord = Coord_Move(coord, PrimaryFacing, 0x0080);
+		coord = Coord_Move(coord, DIR_N, 0x0020);
+		return{coord,0x0010};
+	}
+
+	return(DriveClass::Fire_Data(which));
+}
+
 COORDINATE VesselClass::Fire_Coord(int which) const
 {
 	assert(Vessels.ID(this) == ID);
@@ -1824,8 +1850,8 @@ int VesselClass::Mission_Unload(void)
 								**	Tell everyone around the transport to scatter.
 								*/
 								for (FacingType face = FACING_N; face < FACING_COUNT; face++) {
-									CellClass * cellptr = &Map[Coord].Adjacent_Cell(face);
-									if (cellptr->Is_Clear_To_Move(SPEED_TRACK, true, true)) {
+									CellClass * cellptr = Map[Coord].Adjacent_Cell(face);
+									if (cellptr && cellptr->Is_Clear_To_Move(SPEED_TRACK, true, true)) {
 										cellptr->Incoming(0, true);
 									}
 								}

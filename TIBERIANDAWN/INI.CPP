@@ -321,6 +321,9 @@ bool Read_Scenario_Ini(char *root, bool fresh)
 #ifdef NEWMENU
 		if (Scenario <= 15) {
 			BuildLevel = Scenario;
+		} else if (_stricmp(ScenarioName, "scg30ea") == 0 || _stricmp(ScenarioName, "scg90ea") == 0 || _stricmp(ScenarioName, "scb22ea") == 0) {
+			// N64 missions require build level 15
+			BuildLevel = 15;
 		} else {
 			BuildLevel = WWGetPrivateProfileInt("Basic", "BuildLevel", Scenario, buffer);
 		}
@@ -444,6 +447,9 @@ bool Read_Scenario_Ini(char *root, bool fresh)
 	UnitClass::Read_INI(buffer);
 	Call_Back();
 
+	AircraftClass::Read_INI(buffer);
+	Call_Back();
+
 	/*
 	**	Read in and place the infantry units (all sides).
 	*/
@@ -485,11 +491,15 @@ bool Read_Scenario_Ini(char *root, bool fresh)
 	**	Build the full text of the mission objective.
 	*/
 	for (;;) {
-		char buff[16];
+		int len = (sizeof(BriefingText)-strlen(BriefingText))-1;
+		if (len <= 0) {
+			break;
+		}
 
+		char buff[16];
 		sprintf(buff, "%d", index++);
 		*stage = '\0';
-		WWGetPrivateProfileString("Briefing", buff, "", stage, (sizeof(BriefingText)-strlen(BriefingText))-1, buffer);
+		WWGetPrivateProfileString("Briefing", buff, "", stage, len, buffer);
 		if (strlen(stage) == 0) break;
 		strcat(stage, " ");
 		stage += strlen(stage);
@@ -534,6 +544,9 @@ bool Read_Scenario_Ini(char *root, bool fresh)
 	**		NOD7A cell 2795 - LAND_ROCK
 	**		NOD09A - delete airstrike trigger when radar destroyed
 	**		NOD10B cell 2015 - LAND_ROCK
+	**		NOD13B - trigger AI production when the player reaches the transports
+			       - fix repeating airstrike trigger
+	**		NOD13C - delete airstrike trigger when radar destroyed
 	*/
 	if (_stricmp(ScenarioName, "scb07ea") == 0) {
 		Map[(CELL)2795].Override_Land_Type(LAND_ROCK);
@@ -553,6 +566,39 @@ bool Read_Scenario_Ini(char *root, bool fresh)
 	if (_stricmp(ScenarioName, "scb10eb") == 0) {
 		Map[(CELL)2015].Override_Land_Type(LAND_ROCK);
 	}
+	if (_stricmp(ScenarioName, "scb13eb") == 0) {
+		TriggerClass* prod = new TriggerClass();
+		prod->Set_Name("prod");
+		prod->Event = EVENT_PLAYER_ENTERED;
+		prod->Action = TriggerClass::ACTION_BEGIN_PRODUCTION;
+		prod->House = HOUSE_BAD;
+
+		CellTriggers[276] = prod; prod->AttachCount++;
+		CellTriggers[340] = prod; prod->AttachCount++;
+		CellTriggers[404] = prod; prod->AttachCount++;
+		CellTriggers[468] = prod; prod->AttachCount++;
+
+		TriggerClass* xxxx = TriggerClass::As_Pointer("xxxx");
+		assert(xxxx != NULL);
+		xxxx->IsPersistant = TriggerClass::PERSISTANT;
+	}
+	if (_stricmp(ScenarioName, "scb13ec") == 0) {
+		for (int index = 0; index < Buildings.Count(); ++index) {
+			BuildingClass* building = Buildings.Ptr(index);
+			if (building != NULL && building->Owner() == HOUSE_GOOD && *building == STRUCT_RADAR && building->Trigger == NULL) {
+				building->Trigger = TriggerClass::As_Pointer("delx");
+				if (building->Trigger) {
+					building->Trigger->AttachCount++;
+				}
+				break;
+			}
+		}
+	}
+
+	/*
+	**	Scenario fix-up (applied on loaded games as well)
+	*/
+	Fixup_Scenario();
 
 	/*
 	**	Multi-player last-minute fixups:
@@ -839,6 +885,9 @@ bool Read_Scenario_Ini_File(char *scenario_file_name, char* bin_file_name, const
 	UnitClass::Read_INI(buffer);
 	Call_Back();
 
+	AircraftClass::Read_INI(buffer);
+	Call_Back();
+
 	/*
 	**	Read in and place the infantry units (all sides).
 	*/
@@ -880,11 +929,15 @@ bool Read_Scenario_Ini_File(char *scenario_file_name, char* bin_file_name, const
 	**	Build the full text of the mission objective.
 	*/
 	for (;;) {
-		char buff[16];
+		int len = (sizeof(BriefingText) - strlen(BriefingText)) - 1;
+		if (len <= 0) {
+			break;
+		}
 
+		char buff[16];
 		sprintf(buff, "%d", index++);
 		*stage = '\0';
-		WWGetPrivateProfileString("Briefing", buff, "", stage, (sizeof(BriefingText) - strlen(BriefingText)) - 1, buffer);
+		WWGetPrivateProfileString("Briefing", buff, "", stage, len, buffer);
 		if (strlen(stage) == 0) break;
 		strcat(stage, " ");
 		stage += strlen(stage);
@@ -923,6 +976,11 @@ bool Read_Scenario_Ini_File(char *scenario_file_name, char* bin_file_name, const
 	*/
 	Map.Overpass();
 	Call_Back();
+
+	/*
+	**	Scenario fix-up (applied on loaded games as well)
+	*/
+	Fixup_Scenario();
 
 	/*
 	**	Multi-player last-minute fixups:

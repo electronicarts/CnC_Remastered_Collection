@@ -337,7 +337,7 @@ static AnimTypeClass const LZSmoke(
 	72,										// Loop start frame number.
 	91,										// Ending frame of loop back.
 	-1,										// Number of animation stages.
-	255,										// Number of times the animation loops.
+	127,										// Number of times the animation loops.
 	VOC_NONE,								// Sound effect to play.
 	ANIM_NONE
 );
@@ -1427,7 +1427,7 @@ static AnimTypeClass const OilFieldBurn(
 	33,										// Loop start frame number.
 	99,										// Ending frame of loop back.
 	66,										// Number of animation stages.
-	65535,									// Number of times the animation loops.
+	127,									// Number of times the animation loops.
 	VOC_NONE,								// Sound effect to play.
 	ANIM_NONE
 );
@@ -2360,6 +2360,81 @@ static AnimTypeClass const ChemBall(
 	ANIM_NONE
 );
 
+static AnimTypeClass const Flag(
+	ANIM_FLAG,								// Animation number.
+	"FLAGFLY",								// Data name of animation.
+	21,										// Maximum dimension of animation.
+	0,											// Biggest animation stage.
+	false,									// Normalized animation rate?
+	false,									// Uses white translucent table?
+	false,									// Scorches the ground?
+	false,									// Forms a crater?
+	false,									// Sticks to unit in square?
+	false,									// Ground level animation?
+	false,									// Translucent colors in this animation?
+	false,									// Is this a flame thrower animation?
+	0x0000,									// Damage to apply per tick (fixed point).
+	1,											// Delay between frames.
+	0,											// Starting frame number.
+	0,											// Loop start frame number.
+	-1,										// Ending frame of loop back.
+	-1,										// Number of animation stages.
+	-1,										// Number of times the animation loops.
+	VOC_NONE,								// Sound effect to play.
+	ANIM_NONE
+);
+
+static AnimTypeClass const Beacon(
+	ANIM_BEACON,							// Animation number.
+	"MOVEFLSH",								// Data name of animation.
+	21,										// Maximum dimension of animation.
+	0,											// Biggest animation stage.
+	false,									// Normalized animation rate?
+	false,									// Uses white translucent table?
+	false,									// Scorches the ground?
+	false,									// Forms a crater?
+	false,									// Sticks to unit in square?
+	false,									// Ground level animation?
+	false,									// Translucent colors in this animation?
+	false,									// Is this a flame thrower animation?
+	0x0000,									// Damage to apply per tick (fixed point).
+	1,											// Delay between frames.
+	0,											// Starting frame number.
+	0,											// Loop start frame number.
+	-1,										// Ending frame of loop back.
+	1,										// Number of animation stages.
+	-1,										// Number of times the animation loops.
+	VOC_NONE,								// Sound effect to play.
+	ANIM_NONE,
+	-1,										// Virtual stages
+	0x100,									// Virtual scale
+	ANIM_BEACON_VIRTUAL						// Virtual anim
+);
+
+static AnimTypeClass const BeaconVirtual(
+	ANIM_BEACON_VIRTUAL,			// Animation number.
+	"BEACON",								// Data name of animation.
+	21,										// Maximum dimension of animation.
+	0,											// Biggest animation stage.
+	false,									// Normalized animation rate?
+	false,									// Uses white translucent table?
+	false,									// Scorches the ground?
+	false,									// Forms a crater?
+	false,									// Sticks to unit in square?
+	false,									// Ground level animation?
+	false,									// Translucent colors in this animation?
+	false,									// Is this a flame thrower animation?
+	0x0000,									// Damage to apply per tick (fixed point).
+	1,											// Delay between frames.
+	0,											// Starting frame number.
+	0,											// Loop start frame number.
+	-1,										// Ending frame of loop back.
+	1,										// Number of animation stages.
+	-1,										// Number of times the animation loops.
+	VOC_NONE,								// Sound effect to play.
+	ANIM_NONE
+);
+
 
 
 AnimTypeClass const * const AnimTypeClass::Pointers[ANIM_COUNT] = {
@@ -2459,10 +2534,13 @@ AnimTypeClass const * const AnimTypeClass::Pointers[ANIM_COUNT] = {
 	&StegDie,
 	&RaptDie,
 	&ChemBall,
+	&Flag,
+	&Beacon,
 	&Fire3Virtual,
 	&Fire2Virtual,
 	&Fire1Virtual,
-	&Fire4Virtual
+	&Fire4Virtual,
+	&BeaconVirtual
 };
 
 
@@ -2502,7 +2580,7 @@ AnimTypeClass::AnimTypeClass(AnimType anim, char const *name, int size, int bigg
 	IsWhiteTrans = iswhitetrans;
 	LoopEnd = loopend;
 	LoopStart = loopstart;
-	Loops = (unsigned char)loops;
+	Loops = (char)loops;
 	Size = size;
 	Sound = sound;
 	Stages = stages;
@@ -2545,6 +2623,9 @@ void AnimTypeClass::One_Time(void)
 			((void const *&)As_Reference(index).ImageData) = MixFileClass::Retrieve(fullname);
 		}
 	}
+
+	// Set up beacon image data manually since they're new animations only available in the virtual renderer
+	((void const *&)As_Reference(ANIM_BEACON_VIRTUAL).ImageData) = As_Reference(ANIM_BEACON).ImageData;
 }
 
 

@@ -290,7 +290,15 @@ unsigned short TechnoTypeClass::Get_Ownable(void) const
  *=============================================================================================*/
 int TechnoTypeClass::Time_To_Build(HousesType house) const
 {
-	int cost = Raw_Cost();
+	/*
+	**	Base time is the raw cost.
+	*/
+	int time = Raw_Cost();
+
+	HouseClass* hptr = HouseClass::As_Pointer(house);
+	if (!hptr || !hptr->IsActive) {
+		return time;
+	}
 
 	/*
 	**	For computer controlled buildings, slow down production on
@@ -299,9 +307,8 @@ int TechnoTypeClass::Time_To_Build(HousesType house) const
 	if (PlayerPtr->Difficulty != DIFF_HARD &&
 		GameToPlay == GAME_NORMAL &&
 		What_Am_I() == RTTI_BUILDINGTYPE &&
-		PlayerPtr->Class->House != house) {
-
-		cost = (cost + (PlayerPtr->Difficulty == DIFF_EASY ? 4000 : 2000)) / 2;
+		PlayerPtr->Class->House != hptr->Class->House) {
+		time = (time + (PlayerPtr->Difficulty == DIFF_EASY ? 4000 : 2000)) / 2;
 	}
 
 	/*
@@ -309,10 +316,35 @@ int TechnoTypeClass::Time_To_Build(HousesType house) const
 	**	an airfield.
 	*/
 	if (What_Am_I() == RTTI_UNITTYPE && !(Ownable & HOUSEF_GOOD)) {
-		return (cost - (cost/4));
+		time -= (time / 4);
 	}
 
-	return(cost);
+	/*
+	**	Adjust time according to IQ setting of computer controlled house. The
+	**	build time will range from double normal time at the slowest to
+	**	just normal time at the fastest.
+	*/
+	if (!hptr->IsHuman && Rule.Diff[hptr->Difficulty].IsBuildSlowdown) {
+		time = (int)((time * Rule.MaxIQ * 2.0f) / (hptr->IQ + Rule.MaxIQ));
+	}
+
+	/*
+	**	Adjust the time to build based on the power output of the owning house.
+	*/
+	int power = hptr->Power_Fraction();
+	int inv_scale(256);
+	if (power == 0x000) {
+		inv_scale = 64;
+	}
+	else if (power < 0x080) {
+		inv_scale = 103;
+	}
+	else if (power < 0x0100) {
+		inv_scale = 171;
+	}
+	time = (time * 256) / inv_scale;
+
+	return(time);
 }
 
 
@@ -988,7 +1020,9 @@ void TechnoClass::Draw_It(int x, int y, WindowNumberType window)
 {
 	Clear_Redraw_Flag();
 
-	const bool show_health_bar = (Strength > 0) && (Is_Selected_By_Player() ||
+	const bool show_health_bar =
+		(Strength > 0) && !Is_Cloaked(PlayerPtr) &&
+		(Is_Selected_By_Player() ||
 		((Special.HealthBarDisplayMode == SpecialClass::HB_DAMAGED) && (Strength < Techno_Type_Class()->MaxStrength)) ||
 		(Special.HealthBarDisplayMode == SpecialClass::HB_ALWAYS));
 
@@ -1013,10 +1047,8 @@ void TechnoClass::Draw_It(int x, int y, WindowNumberType window)
 		for (int i = start_line; i < LineCount; i++) {
 			CC_Draw_Line(Lines[i][0], Lines[i][1], Lines[i][2], Lines[i][3], (unsigned char)Lines[i][4], LineFrame, window);
 		}
-		if ((window == WINDOW_VIRTUAL) && (++LineFrame >= LineMaxFrames)) {
-			LineCount = 0;
-			LineFrame = 0;
-			LineMaxFrames = 0;
+		if (window == WINDOW_VIRTUAL) {
+			LineFrame++;
 		}
 	}
 
@@ -1159,7 +1191,8 @@ bool TechnoClass::In_Range(TARGET target, int which, bool reciprocal_check) cons
 		if (building) {
 			range += ((building->Class->Width() + building->Class->Height()) * (ICON_LEPTON_W / 4));
 		}
-		if (::Distance(Fire_Coord(which), As_Coord(target)) <= range) {
+		FireDataType data = Fire_Data(which);
+		if (MAX(0, ::Distance(data.Center, As_Coord(target)) - data.Distance) <= range) {
 			return(true);
 		}
 		
@@ -1212,8 +1245,8 @@ bool TechnoClass::In_Range(ObjectClass const * target, int which, bool reciproca
 			BuildingClass const * building = (BuildingClass const *)target;
 			range += ((building->Class->Width() + building->Class->Height()) * (ICON_LEPTON_W / 4));
 		}
-
-		if (::Distance(Fire_Coord(which), target->Center_Coord()) <= range) {
+		FireDataType data = Fire_Data(which);
+		if (MAX(0, ::Distance(data.Center, target->Center_Coord()) - data.Distance) <= range) {
 			return(true);
 		}
 		
@@ -1335,7 +1368,7 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	/*
 	**	If the object is cloaked, then it isn't a legal target.
 	*/
-	if (object->Cloak == CLOAKED) return(false);
+	if (object->Is_Cloaked(this)) return(false);
 
 	/*
 	**	Determine if the target is theoretically allowed to be a target. If
@@ -1369,7 +1402,7 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	**	If the scan is limited to capturable buildings only, then bail if the examined
 	**	object isn't a capturable building.
 	*/
-	if ((method & THREAT_CAPTURE) && (otype != RTTI_BUILDING || !((BuildingTypeClass const *)tclass)->IsCaptureable)) {
+	if ((method & THREAT_CAPTURE) && (otype != RTTI_BUILDING || !object->Can_Capture())) {
 		return(false);
 	}
 
@@ -1968,8 +2001,13 @@ void TechnoClass::AI(void)
 	/*
 	**	Handle line delay logic.
 	*/
-	if ((LineMaxFrames > 0) && (LineCount > 0)) {
+	if (LineMaxFrames > 0) {
 		Map.Flag_To_Redraw(true);
+		if (LineFrame >= LineMaxFrames) {
+			LineCount = 0;
+			LineFrame = 0;
+			LineMaxFrames = 0;
+		}
 	}
 
 	/*
@@ -2066,7 +2104,7 @@ FireErrorType TechnoClass::Can_Fire(TARGET target, int which) const
 //Mono_Printf("Buildings[0]=%p.\n", Buildings.Raw_Ptr(0));
 //Mono_Printf("Aircraft[0]=%p.\n", Aircraft.Raw_Ptr(0));
 //Mono_Printf("object=%p, Strength=%d, IsActive=%d, IsInLimbo=%d.\n", object, (long)object->Strength, object->IsActive, object->IsInLimbo);Get_Key();
-	if (object && /*(object->IsActive || GameToPlay != GAME_NORMAL) &&*/ object->Is_Techno() && ((TechnoClass *)object)->Cloak == CLOAKED) {
+	if (object && /*(object->IsActive || GameToPlay != GAME_NORMAL) &&*/ object->Is_Techno() && ((TechnoClass *)object)->Is_Cloaked(this)) {
 		return(FIRE_CANT);
 	}
 
@@ -2249,6 +2287,9 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 	COORDINATE				fire_coord;			// Coordinate of firing position.
 	TechnoTypeClass const & tclass = *Techno_Type_Class();
 	ObjectClass		*object;
+	if ((which == 0 && tclass.Primary == WEAPON_NONE) || (which != 0 && tclass.Secondary == WEAPON_NONE)) {
+		return(NULL);
+	}
 	WeaponTypeClass const *weapon = (which == 0) ? &Weapons[tclass.Primary] : &Weapons[tclass.Secondary];
 	BulletTypeClass const &btype = BulletTypeClass::As_Reference(weapon->Fires);
 
@@ -2385,7 +2426,7 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 		}
 #else
 		/*
-		** Now need to reveal for any human player that is the target. ST - 3/13/2019 5:43PM
+		** Now need to reveal for any player (only humans in normal node) that is the target. ST - 3/13/2019 5:43PM
 		*/
 
 		ObjectClass *obj = As_Object(target);
@@ -2393,7 +2434,7 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 			HousesType tgt_owner = obj->Owner();
 
 			HouseClass *player = HouseClass::As_Pointer(tgt_owner);
-			if (player != nullptr && player->IsHuman) {
+			if (player != nullptr && (player->IsHuman || GameToPlay != GAME_NORMAL)) {
 				if ((!Is_Owned_By_Player(player) && !Is_Discovered_By_Player(player)) || !Map[Coord_Cell(Center_Coord())].Is_Mapped(House)) {
 					Map.Sight_From(player, Coord_Cell(Center_Coord()), 1, false);
 				}
@@ -2558,11 +2599,17 @@ ActionType TechnoClass::What_Action(ObjectClass * object) const
 		//if (IsOwnedByPlayer && (ctrldown || !House->Is_Ally(object)) && (ctrldown || object->Class_Of().IsLegalTarget || (Special.IsTreeTarget && object->What_Am_I() == RTTI_TERRAIN))) {
 			if (Can_Player_Move() || In_Range(object, 0)) {
 				// Check for anti-air capability
-				if ((object->What_Am_I() != RTTI_AIRCRAFT) ||
-					((Techno_Type_Class()->Primary != WEAPON_NONE) && BulletTypeClass::As_Reference(Weapons[Techno_Type_Class()->Primary].Fires).IsAntiAircraft) ||
-					((Techno_Type_Class()->Secondary != WEAPON_NONE) && BulletTypeClass::As_Reference(Weapons[Techno_Type_Class()->Secondary].Fires).IsAntiAircraft) ||
-					(((AircraftClass *)object)->Altitude == 0)) {
+				if (object->What_Am_I() != RTTI_AIRCRAFT) {
 					return(ACTION_ATTACK);
+				} else {
+					AircraftClass* aircraft = (AircraftClass*)object;
+					if (*aircraft != AIRCRAFT_CARGO) {
+						if (((Techno_Type_Class()->Primary != WEAPON_NONE) && BulletTypeClass::As_Reference(Weapons[Techno_Type_Class()->Primary].Fires).IsAntiAircraft) ||
+							((Techno_Type_Class()->Secondary != WEAPON_NONE) && BulletTypeClass::As_Reference(Weapons[Techno_Type_Class()->Secondary].Fires).IsAntiAircraft) ||
+							(aircraft->Altitude == 0)) {
+							return(ACTION_ATTACK);
+						}
+					}
 				}
 			}
 		}
@@ -4396,6 +4443,7 @@ BuildingClass * TechnoClass::Find_Docking_Bay(StructType b, bool friendly) const
 				if (bestval == -1 || Distance(building) < bestval || building->IsLeader) {
 					best = building;
 					bestval = Distance(building);
+					if (building->IsLeader) break;
 				}
 			}
 		}
@@ -4570,7 +4618,22 @@ bool TechnoClass::Is_Owned_By_Player(HouseClass *player) const
 }			  
 
 
+bool TechnoClass::Is_Cloaked(HousesType house) const
+{
+	return !House->Is_Ally(house) && (Cloak == CLOAKED);
+}
 
+
+bool TechnoClass::Is_Cloaked(HouseClass const * house) const
+{
+	return !House->Is_Ally(house) && (Cloak == CLOAKED);
+}
+
+
+bool TechnoClass::Is_Cloaked(ObjectClass const * object) const
+{
+	return !House->Is_Ally(object) && (Cloak == CLOAKED);
+}
 
 
 
