@@ -14,14 +14,6 @@
     <ProjectGuid>{1380ED08-82A3-49C2-A171-1915574B3382}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TiberianDawn</RootNamespace>
-    <SccProjectName>
-    </SccProjectName>
-    <SccAuxPath>
-    </SccAuxPath>
-    <SccLocalPath>
-    </SccLocalPath>
-    <SccProvider>
-    </SccProvider>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
