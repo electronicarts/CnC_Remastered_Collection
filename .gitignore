@@ -1,0 +1,9 @@
+
+# Visual Studio files
+.vs/
+*.user
+
+# Output object and binary folders
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
