@@ -197,6 +197,7 @@
     <ClInclude Include="CONNMGR.H" />
     <ClInclude Include="CONQUER.H" />
     <ClInclude Include="CONTROL.H" />
+    <ClInclude Include="COORDA.h" />
     <ClInclude Include="CREDITS.H" />
     <ClInclude Include="CREW.H" />
     <ClInclude Include="DDE.H" />
