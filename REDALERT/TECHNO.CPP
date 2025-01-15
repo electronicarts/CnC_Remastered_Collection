@@ -6495,7 +6495,7 @@ int TechnoTypeClass::Time_To_Build(HousesType house) const
 		time *= hptr->BuildSpeedBias;
 	}
 	else {
-		
+#if (0)	// No longer desired. ST - 1/18/2021		
 		/*
 		** New feature - Turkey has a 10% build speed bonus even though it isn't specified in the rules
 		*/
@@ -6505,7 +6505,7 @@ int TechnoTypeClass::Time_To_Build(HousesType house) const
 				time /= 10;
 			}
 		}
-		
+#endif		
 		if (What_Am_I() == RTTI_BUILDINGTYPE || What_Am_I() == RTTI_INFANTRYTYPE) {
 			time *= hptr->BuildSpeedBias;
 		}
